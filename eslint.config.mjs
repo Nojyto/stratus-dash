@@ -1,4 +1,5 @@
 import { FlatCompat } from "@eslint/eslintrc"
+import prettierConfig from "eslint-config-prettier"
 import { dirname } from "path"
 import { fileURLToPath } from "url"
 
@@ -22,6 +23,7 @@ const eslintConfig = [
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  prettierConfig,
 ]
 
 export default eslintConfig
