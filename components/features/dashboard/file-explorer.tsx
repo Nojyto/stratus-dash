@@ -1,87 +1,138 @@
 "use client"
 
 import {
+  createFolder,
   createNote,
+  deleteFolder,
   deleteNote,
+  updateFolder,
   updateNote,
+  type Folder,
   type Note,
 } from "@/app/dashboard/actions"
+import { Button } from "@/components/ui/button"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import {
   ChevronRight,
   Edit,
   File,
-  Folder,
+  Folder as FolderIcon,
   FolderPlus,
+  PanelLeft,
+  PanelRight,
   Plus,
   Trash2,
 } from "lucide-react"
+import type { JSX } from "react"
 import { useState } from "react"
-import { Button } from "../../ui/button"
-import { Input } from "../../ui/input"
 
 type FileExplorerProps = {
   notes: Note[]
+  folders: Folder[]
   selectedNote: Note | null
-  onSelectAction: (note: Note | null) => void
+  onSelectNoteAction: (note: Note | null) => void
   setNotesAction: React.Dispatch<React.SetStateAction<Note[]>>
+  setFoldersAction: React.Dispatch<React.SetStateAction<Folder[]>>
+  onLayoutChangeAction: (layout: "horizontal" | "vertical") => void
 }
+
+type TreeItem = (Folder & { is_folder: true }) | (Note & { is_folder: false })
+
+const MAX_FOLDER_DEPTH = 5
 
 export function FileExplorer({
   notes,
+  folders,
   selectedNote,
-  onSelectAction,
+  onSelectNoteAction,
   setNotesAction,
+  setFoldersAction,
+  onLayoutChangeAction,
 }: FileExplorerProps) {
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [newName, setNewName] = useState("")
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
 
   const handleCreate = async (isFolder: boolean) => {
-    let parentId = null
-    if (selectedNote) {
-      parentId = selectedNote.is_folder
-        ? selectedNote.id
-        : selectedNote.parent_id
+    let parentFolderId: string | null = null
+    if (selectedNote?.folder_id) {
+      parentFolderId = selectedNote.folder_id
     }
 
-    const newNote = await createNote({
-      title: isFolder ? "New Folder" : "New Note",
-      content: "",
-      is_folder: isFolder,
-      parent_id: parentId,
-    })
-
-    if (newNote) {
-      setNotesAction((prev) => [...prev, newNote])
-      if (parentId) {
-        setExpandedFolders((prev) => new Set(prev).add(parentId!))
+    if (isFolder) {
+      const newFolder = await createFolder({
+        name: "New Folder",
+        parent_id: parentFolderId,
+      })
+      if (newFolder) {
+        setFoldersAction((prev) => [...prev, newFolder])
+        if (parentFolderId) {
+          setExpandedFolders((prev) => new Set(prev).add(parentFolderId!))
+        }
+      }
+    } else {
+      const newNote = await createNote({
+        title: "New Note",
+        folder_id: parentFolderId,
+      })
+      if (newNote) {
+        setNotesAction((prev) => [...prev, newNote])
+        if (parentFolderId) {
+          setExpandedFolders((prev) => new Set(prev).add(parentFolderId!))
+        }
+        onSelectNoteAction(newNote)
       }
     }
   }
 
-  const handleDelete = async (noteId: string) => {
-    await deleteNote(noteId)
-    setNotesAction((prev) => prev.filter((n) => n.id !== noteId))
-    if (selectedNote?.id === noteId) {
-      onSelectAction(null)
+  const handleDelete = async (item: TreeItem) => {
+    if (item.is_folder) {
+      await deleteFolder(item.id)
+      setFoldersAction((prev) => prev.filter((f) => f.id !== item.id))
+    } else {
+      await deleteNote(item.id)
+      setNotesAction((prev) => prev.filter((n) => n.id !== item.id))
+    }
+
+    if (selectedNote?.id === item.id) {
+      onSelectNoteAction(null)
     }
   }
 
-  const handleRename = (note: Note) => {
-    setEditingNoteId(note.id)
-    setNewName(note.title)
+  const handleRename = (item: TreeItem) => {
+    setEditingId(item.id)
+    setNewName(item.is_folder ? item.name : item.title)
   }
 
-  const handleSaveRename = async (noteId: string) => {
-    if (newName.trim() === "") return
-    const updatedNote = await updateNote(noteId, { title: newName })
-    if (updatedNote) {
-      setNotesAction((prev) =>
-        prev.map((n) => (n.id === updatedNote.id ? updatedNote : n))
-      )
+  const handleSaveRename = async (item: TreeItem) => {
+    if (newName.trim() === "") {
+      setEditingId(null)
+      return
     }
-    setEditingNoteId(null)
+
+    if (item.is_folder) {
+      const updated = await updateFolder(item.id, { name: newName })
+      if (updated) {
+        setFoldersAction((prev) =>
+          prev.map((f) => (f.id === updated.id ? updated : f))
+        )
+      }
+    } else {
+      const updated = await updateNote(item.id, { title: newName })
+      if (updated) {
+        setNotesAction((prev) =>
+          prev.map((n) => (n.id === updated.id ? updated : n))
+        )
+      }
+    }
+    setEditingId(null)
   }
 
   const toggleFolder = (folderId: string) => {
@@ -91,59 +142,86 @@ export function FileExplorer({
         newSet.delete(folderId)
       } else {
         newSet.add(folderId)
+        const firstNoteInFolder = notes.find((n) => n.folder_id === folderId)
+        if (firstNoteInFolder) {
+          onSelectNoteAction(firstNoteInFolder)
+        }
       }
       return newSet
     })
   }
 
-  const renderNotes = (parentId: string | null) => {
-    return notes
-      .filter((note) => note.parent_id === parentId)
-      .sort((a, b) => (a.is_folder === b.is_folder ? 0 : a.is_folder ? -1 : 1))
-      .map((note) => {
-        const isExpanded = expandedFolders.has(note.id)
+  const renderTree = (
+    parentId: string | null,
+    depth: number
+  ): JSX.Element[] => {
+    if (depth > MAX_FOLDER_DEPTH) return []
+
+    const childFolders: TreeItem[] = folders
+      .filter((f) => f.parent_id === parentId)
+      .map((f) => ({ ...f, is_folder: true }))
+    const childNotes: TreeItem[] = notes
+      .filter((n) => n.folder_id === parentId)
+      .map((n) => ({ ...n, is_folder: false }))
+
+    const items: TreeItem[] = [...childFolders, ...childNotes]
+
+    return items
+      .sort((a, b) => {
+        if (a.is_folder !== b.is_folder) return a.is_folder ? -1 : 1
+        const nameA = a.is_folder ? a.name : a.title
+        const nameB = b.is_folder ? b.name : b.title
+        return nameA.localeCompare(nameB)
+      })
+      .map((item) => {
+        const isExpanded = item.is_folder && expandedFolders.has(item.id)
+        const title = item.is_folder ? item.name : item.title
+
         return (
-          <div key={note.id} className="ml-4">
+          <div key={item.id} className="ml-4">
             <div
               className={cn(
                 "group relative flex cursor-pointer items-center justify-between rounded p-1",
-                selectedNote?.id === note.id && "bg-accent"
+                !item.is_folder && selectedNote?.id === item.id && "bg-accent"
               )}
-              onClick={() => onSelectAction(note)}
+              onClick={() => {
+                if (item.is_folder) {
+                  toggleFolder(item.id)
+                } else {
+                  onSelectNoteAction(item)
+                }
+              }}
             >
-              {editingNoteId === note.id ? (
+              {editingId === item.id ? (
                 <Input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  onBlur={() => handleSaveRename(note.id)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && handleSaveRename(note.id)
-                  }
+                  onBlur={() => handleSaveRename(item)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveRename(item)
+                    if (e.key === "Escape") setEditingId(null)
+                  }}
                   autoFocus
                   className="h-7"
                 />
               ) : (
-                <div className="flex items-center gap-2">
-                  {note.is_folder && (
-                    <ChevronRight
-                      size={16}
-                      className={cn(
-                        "transition-transform",
-                        isExpanded && "rotate-90"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        toggleFolder(note.id)
-                      }}
-                    />
-                  )}
-                  {note.is_folder ? (
-                    <Folder size={16} />
+                <div className="flex items-center gap-2 truncate">
+                  {item.is_folder ? (
+                    <>
+                      <ChevronRight
+                        size={16}
+                        className={cn(
+                          "flex-shrink-0 transition-transform",
+                          isExpanded && "rotate-90"
+                        )}
+                      />
+                      <FolderIcon size={16} className="flex-shrink-0" />
+                    </>
                   ) : (
-                    <File size={16} className="ml-4" />
+                    <File size={16} className="ml-4 flex-shrink-0" />
                   )}
-                  <span>{note.title}</span>
+                  <span className="truncate">{title}</span>
                 </div>
               )}
               <div className="absolute right-0 top-1/2 flex -translate-y-1/2 bg-background opacity-0 group-hover:opacity-100">
@@ -153,7 +231,7 @@ export function FileExplorer({
                   className="h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleRename(note)
+                    handleRename(item)
                   }}
                 >
                   <Edit size={14} />
@@ -164,43 +242,61 @@ export function FileExplorer({
                   className="h-7 w-7"
                   onClick={(e) => {
                     e.stopPropagation()
-                    handleDelete(note.id)
+                    handleDelete(item)
                   }}
                 >
                   <Trash2 size={14} />
                 </Button>
               </div>
             </div>
-            {note.is_folder && isExpanded && renderNotes(note.id)}
+            {item.is_folder && isExpanded && renderTree(item.id, depth + 1)}
           </div>
         )
       })
   }
 
   return (
-    <div className="p-2">
-      <div className="mb-2 flex items-center justify-between px-2">
-        <h2 className="text-lg font-semibold">Explorer</h2>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleCreate(false)}
-            title="New Note"
-          >
-            <Plus size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleCreate(true)}
-            title="New Folder"
-          >
-            <FolderPlus size={16} />
-          </Button>
+    <ContextMenu>
+      <ContextMenuTrigger className="h-full">
+        <div className="h-full p-2">
+          <div className="mb-2 flex items-center justify-between px-2">
+            <h2 className="text-lg font-semibold">Explorer</h2>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCreate(false)}
+                title="New Note"
+              >
+                <Plus size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCreate(true)}
+                title="New Folder"
+              >
+                <FolderPlus size={16} />
+              </Button>
+            </div>
+          </div>
+          {folders.length === 0 && notes.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">No items yet.</p>
+          ) : (
+            renderTree(null, 0)
+          )}
         </div>
-      </div>
-      {renderNotes(null)}
-    </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onSelect={() => onLayoutChangeAction("horizontal")}>
+          <PanelLeft className="mr-2 h-4 w-4" />
+          <span>Move Panel Left</span>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => onLayoutChangeAction("vertical")}>
+          <PanelRight className="mr-2 h-4 w-4" />
+          <span>Move Panel Right</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }

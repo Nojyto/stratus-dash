@@ -1,28 +1,45 @@
 "use client"
 
-import type { Note } from "@/app/dashboard/actions"
+import type { Folder, Note } from "@/app/dashboard/actions"
 import { useState } from "react"
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
 import { FileExplorer } from "./file-explorer"
 import { NoteEditor } from "./note-editor"
 
-export function Dashboard({ initialNotes }: { initialNotes: Note[] }) {
+type DashboardProps = {
+  initialNotes: Note[]
+  initialFolders: Folder[]
+}
+
+export function Dashboard({ initialNotes, initialFolders }: DashboardProps) {
   const [notes, setNotes] = useState(initialNotes)
+  const [folders, setFolders] = useState(initialFolders)
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+  const [layout, setLayout] = useState<"horizontal" | "vertical">("horizontal")
 
   return (
-    <PanelGroup direction="horizontal" className="h-full">
-      <Panel defaultSize={20}>
+    <PanelGroup
+      direction={layout}
+      className="h-full max-h-[calc(100vh-80px)] pl-2"
+    >
+      <Panel defaultSize={20} minSize={15} maxSize={30}>
         <FileExplorer
           notes={notes}
+          folders={folders}
           selectedNote={selectedNote}
-          onSelectAction={setSelectedNote}
+          onSelectNoteAction={setSelectedNote}
           setNotesAction={setNotes}
+          setFoldersAction={setFolders}
+          onLayoutChangeAction={setLayout}
         />
       </Panel>
-      <PanelResizeHandle className="w-2 bg-border" />
+      <PanelResizeHandle className="h-screen w-2 bg-border" />
       <Panel defaultSize={80}>
-        <NoteEditor note={selectedNote} setNotesAction={setNotes} />
+        <NoteEditor
+          key={selectedNote?.id}
+          note={selectedNote}
+          setNotesAction={setNotes}
+        />
       </Panel>
     </PanelGroup>
   )

@@ -1,7 +1,7 @@
 import { Dashboard } from "@/components/features/dashboard/dashboard"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { getNotes } from "./actions"
+import { getDashboardItems } from "./actions"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     redirect("/auth/login")
   }
 
-  const notes = await getNotes()
+  const { notes, folders } = await getDashboardItems()
 
-  return <Dashboard initialNotes={notes} />
+  return <Dashboard initialNotes={notes} initialFolders={folders} />
 }

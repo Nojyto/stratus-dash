@@ -7,37 +7,66 @@ export type Note = {
   id: string
   title: string
   content: string | null
+  folder_id: string | null
+  user_id: string
+  created_at: string
+}
+
+export type Folder = {
+  id: string
+  name: string
   parent_id: string | null
   user_id: string
   created_at: string
-  is_folder: boolean
 }
 
-export async function getNotes(): Promise<Note[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase.from("notes").select()
-
-  if (error) {
-    console.error("Error fetching notes:", error)
-    return []
-  }
-
-  return data as Note[]
+export type DashboardItems = {
+  notes: Note[]
+  folders: Folder[]
 }
 
-export async function createNote(note: Partial<Note>): Promise<Note | null> {
+export async function getDashboardItems(): Promise<DashboardItems> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    throw new Error("User not authenticated")
+    return { notes: [], folders: [] }
   }
+
+  const [notesResult, foldersResult] = await Promise.all([
+    supabase.from("notes").select().eq("user_id", user.id),
+    supabase.from("folders").select().eq("user_id", user.id),
+  ])
+
+  if (notesResult.error) {
+    console.error("Error fetching notes:", notesResult.error)
+  }
+  if (foldersResult.error) {
+    console.error("Error fetching folders:", foldersResult.error)
+  }
+
+  return {
+    notes: (notesResult.data as Note[]) ?? [],
+    folders: (foldersResult.data as Folder[]) ?? [],
+  }
+}
+
+// Note Actions
+export async function createNote(
+  note: Pick<Note, "title" | "folder_id">
+): Promise<Note | null> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("User not authenticated")
 
   const { data, error } = await supabase
     .from("notes")
-    .insert([{ ...note, user_id: user.id }])
+    .insert([{ ...note, content: "", user_id: user.id }])
     .select()
     .single()
 
@@ -52,7 +81,7 @@ export async function createNote(note: Partial<Note>): Promise<Note | null> {
 
 export async function updateNote(
   id: string,
-  note: Partial<Note>
+  note: Partial<Pick<Note, "title" | "content">>
 ): Promise<Note | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -66,7 +95,6 @@ export async function updateNote(
     console.error("Error updating note:", error)
     return null
   }
-
   revalidatePath("/dashboard")
   return data
 }
@@ -79,7 +107,63 @@ export async function deleteNote(id: string): Promise<{ success: boolean }> {
     console.error("Error deleting note:", error)
     return { success: false }
   }
+  revalidatePath("/dashboard")
+  return { success: true }
+}
 
+// Folder Actions
+export async function createFolder(
+  folder: Pick<Folder, "name" | "parent_id">
+): Promise<Folder | null> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("User not authenticated")
+
+  const { data, error } = await supabase
+    .from("folders")
+    .insert([{ ...folder, user_id: user.id }])
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error creating folder:", error)
+    return null
+  }
+  revalidatePath("/dashboard")
+  return data
+}
+
+export async function updateFolder(
+  id: string,
+  folder: Partial<Pick<Folder, "name">>
+): Promise<Folder | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("folders")
+    .update(folder)
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error updating folder:", error)
+    return null
+  }
+  revalidatePath("/dashboard")
+  return data
+}
+
+export async function deleteFolder(id: string): Promise<{ success: boolean }> {
+  const supabase = await createClient()
+  const { error } = await supabase.from("folders").delete().eq("id", id)
+  // The ON DELETE CASCADE rule in the schema will handle deleting sub-folders and notes.
+  if (error) {
+    console.error("Error deleting folder:", error)
+    return { success: false }
+  }
   revalidatePath("/dashboard")
   return { success: true }
 }
