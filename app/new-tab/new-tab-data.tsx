@@ -1,0 +1,20 @@
+import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
+import { getNewTabItems } from "./actions"
+
+export async function NewTabData() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/auth/login")
+  }
+
+  const { links, settings } = await getNewTabItems()
+
+  return <NewTabContent initialLinks={links} initialSettings={settings} />
+}

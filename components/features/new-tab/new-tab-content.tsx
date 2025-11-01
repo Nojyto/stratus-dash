@@ -34,13 +34,11 @@ import { QuickLinkItem } from "./quick-link-item"
 import { SearchBar } from "./search-bar"
 
 type NewTabContentProps = {
-  userEmail: string
   initialLinks: QuickLink[]
   initialSettings: UserSettings | null
 }
 
 export function NewTabContent({
-  userEmail,
   initialLinks,
   initialSettings,
 }: NewTabContentProps) {
@@ -124,7 +122,6 @@ export function NewTabContent({
   return (
     <div className="flex w-full flex-1 flex-col items-center justify-center gap-12 p-6">
       <div className="absolute right-6 top-6 flex items-center gap-2 text-sm">
-        <span className="text-muted-foreground">{userEmail}</span>
         <Button
           variant={isEditing ? "default" : "ghost"}
           size="icon"

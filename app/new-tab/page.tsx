@@ -1,26 +1,11 @@
-import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import { getNewTabItems } from "./actions"
+import { NewTabSkeleton } from "@/components/features/new-tab/new-tab-skeleton"
+import { Suspense } from "react"
+import { NewTabData } from "./new-tab-data"
 
-export default async function NewTabPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
-
-  const { links, settings } = await getNewTabItems()
-
+export default function NewTabPage() {
   return (
-    <NewTabContent
-      userEmail={user.email ?? ""}
-      initialLinks={links}
-      initialSettings={settings}
-    />
+    <Suspense fallback={<NewTabSkeleton />}>
+      <NewTabData />
+    </Suspense>
   )
 }
