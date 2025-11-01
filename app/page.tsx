@@ -2,9 +2,21 @@ import { Hero } from "@/components/hero"
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect("/new-tab")
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center">
       <div className="flex w-full flex-1 flex-col items-center gap-20">
