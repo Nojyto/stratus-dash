@@ -7,6 +7,7 @@ import {
   type UserSettings,
 } from "@/app/new-tab/actions"
 import { ClientOnly } from "@/components/common/client-only"
+import { ThemeSwitcher } from "@/components/common/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 import {
   DndContext,
   KeyboardSensor,
@@ -48,6 +50,9 @@ export function NewTabContent({
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [url, setUrl] = useState("")
+  const [isHovering, setIsHovering] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const isVisible = isHovering || isMenuOpen
 
   const didDragEnd = useRef(false)
   const sensors = useSensors(
@@ -65,9 +70,7 @@ export function NewTabContent({
     if (!didDragEnd.current) {
       return
     }
-
     didDragEnd.current = false
-
     const linksToUpdate = links.map((link, index) => ({
       id: link.id,
       sort_order: index,
@@ -76,7 +79,7 @@ export function NewTabContent({
     startTransition(async () => {
       await updateLinkOrder(linksToUpdate)
     })
-  }, [links])
+  }, [links, startTransition])
 
   const handleAddLink = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -121,7 +124,14 @@ export function NewTabContent({
 
   return (
     <div className="flex w-full flex-1 flex-col items-center justify-center gap-12 p-6">
-      <div className="absolute right-6 top-6 flex items-center gap-2 text-sm">
+      <div
+        className={cn(
+          "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity",
+          isVisible && "opacity-100"
+        )}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
         <Button
           variant={isEditing ? "default" : "ghost"}
           size="icon"
@@ -130,6 +140,7 @@ export function NewTabContent({
         >
           <Edit className="h-4 w-4" />
         </Button>
+        <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
       </div>
 
       <ClientOnly>
