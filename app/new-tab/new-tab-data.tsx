@@ -14,7 +14,13 @@ export async function NewTabData() {
     redirect("/auth/login")
   }
 
-  const { links, settings } = await getNewTabItems()
+  const { links, settings, wallpaper } = await getNewTabItems()
 
-  return <NewTabContent initialLinks={links} initialSettings={settings} />
+  return (
+    <NewTabContent
+      initialLinks={links}
+      initialSettings={settings}
+      initialWallpaper={wallpaper}
+    />
+  )
 }

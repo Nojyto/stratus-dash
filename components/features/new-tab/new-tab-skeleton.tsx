@@ -1,6 +1,6 @@
 export function NewTabSkeleton() {
   return (
-    <div className="flex w-full flex-1 animate-pulse flex-col items-center justify-center gap-12 p-6">
+    <div className="flex w-full flex-1 animate-pulse flex-col items-center justify-start gap-12 p-6 pt-32">
       {/* Placeholder for Quick Links */}
       <div className="flex max-w-lg flex-wrap items-start justify-center gap-x-4 gap-y-6">
         {Array.from({ length: 5 }).map((_, i) => (

@@ -29,6 +29,10 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* Background gradient defaults */
+    --gradient-from: hsl(var(--background));
+    --gradient-to: hsl(var(--secondary));
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -55,6 +59,10 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Background gradient defaults */
+    --gradient-from: hsl(var(--background));
+    --gradient-to: hsl(var(--secondary));
   }
 }
 
@@ -64,5 +72,25 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  body.bg-gradient-active {
+    @apply bg-gradient-to-br from-[hsl(var(--gradient-from))] to-[hsl(var(--gradient-to))];
+  }
+  body.bg-image-active::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100svh;
+    z-index: -1;
+    background-image: var(--bg-image);
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.7);
+  }
+  .dark body.bg-image-active::before {
+    filter: brightness(0.75);
   }
 }
