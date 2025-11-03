@@ -75,7 +75,7 @@ export function EditLinkPopover({
         <Button
           variant="outline"
           size="icon"
-          className="absolute -right-1 -top-1 h-5 w-5 rounded-full"
+          className="absolute -right-1 -top-1 h-5 w-5 border-none bg-transparent p-0"
         >
           <Edit className="h-3 w-3" />
         </Button>

@@ -83,7 +83,7 @@ export function QuickLinkItem({
       </Comp>
 
       {displayTitle && (
-        <span className="w-full truncate text-center text-xs text-muted-foreground">
+        <span className="w-full truncate text-center text-xs text-foreground">
           {displayTitle}
         </span>
       )}

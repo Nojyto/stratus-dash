@@ -1,4 +1,3 @@
-import { Hero } from "@/components/hero"
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
@@ -22,7 +21,6 @@ export default async function Home() {
       <div className="flex w-full flex-1 flex-col items-center gap-20">
         <Header />
         <div className="flex max-w-5xl flex-1 flex-col gap-20 p-5">
-          <Hero />
           <main className="flex flex-1 flex-col gap-6 px-4">
             <Button asChild>
               <Link href="/dashboard">Go to Dashboard</Link>

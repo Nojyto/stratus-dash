@@ -244,8 +244,8 @@ export function NewTabContent({
     <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6 pt-32">
       <div
         className={cn(
-          "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity",
-          isVisible && "opacity-100"
+          "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
+          isVisible && "opacity-100 delay-0 duration-0"
         )}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
@@ -353,8 +353,8 @@ export function NewTabContent({
       {/* Wallpaper Controls */}
       <div
         className={cn(
-          "absolute bottom-6 left-6 flex items-center gap-1 opacity-0 transition-opacity",
-          isVisible && "opacity-100"
+          "absolute bottom-6 left-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
+          isVisible && "opacity-100 delay-0 duration-0"
         )}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
