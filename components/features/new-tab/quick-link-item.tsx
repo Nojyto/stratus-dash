@@ -12,6 +12,7 @@ type QuickLinkItemProps = {
   isEditing: boolean
   onDeleteAction: (id: string) => void
   onUpdateAction: (link: QuickLink) => void
+  tabIndex: number
 }
 
 export function QuickLinkItem({
@@ -19,6 +20,7 @@ export function QuickLinkItem({
   isEditing,
   onDeleteAction,
   onUpdateAction,
+  tabIndex,
 }: QuickLinkItemProps) {
   const {
     attributes,
@@ -61,8 +63,9 @@ export function QuickLinkItem({
     >
       <Comp
         href={isEditing ? undefined : link.url}
+        tabIndex={tabIndex}
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-full bg-secondary transition-all hover:bg-accent",
+          "flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary/50 backdrop-blur-sm transition-all hover:bg-secondary/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground/50 focus-visible:ring-offset-0",
           isEditing && "cursor-grab"
         )}
         onClick={(e) => {
@@ -76,9 +79,9 @@ export function QuickLinkItem({
           src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
           alt=""
           draggable="false"
-          width={28}
-          height={28}
-          className="h-7 w-7"
+          width={36}
+          height={36}
+          className="h-9 w-9"
         />
       </Comp>
 

@@ -272,11 +272,12 @@ export function NewTabContent({
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <SortableContext items={links.map((l) => l.id)}>
             <div className="flex max-w-lg flex-wrap items-start justify-center gap-x-4 gap-y-6">
-              {links.map((link) => (
+              {links.map((link, i) => (
                 <QuickLinkItem
                   key={link.id}
                   link={link}
                   isEditing={isEditing}
+                  tabIndex={i}
                   onDeleteAction={(id) =>
                     setLinks(links.filter((l) => l.id !== id))
                   }
@@ -296,10 +297,11 @@ export function NewTabContent({
                     <div className="flex w-20 flex-col items-center gap-1.5">
                       <Button
                         variant="outline"
-                        className="h-12 w-12 rounded-full border-dashed"
+                        className="h-14 w-14 rounded-full border-dashed"
                         aria-label="Add new quick link"
+                        tabIndex={links.length}
                       >
-                        <Plus className="h-6 w-6 text-muted-foreground" />
+                        <Plus className="h-9 w-9 text-muted-foreground" />
                       </Button>
                       <span className="w-full text-center text-xs text-muted-foreground">
                         Add Link
@@ -344,11 +346,11 @@ export function NewTabContent({
             </div>
           </SortableContext>
         </DndContext>
-      </ClientOnly>
 
-      <SearchBar
-        initialEngine={initialSettings?.default_search_engine ?? "google"}
-      />
+        <SearchBar
+          initialEngine={initialSettings?.default_search_engine ?? "google"}
+        />
+      </ClientOnly>
 
       {/* Wallpaper Controls */}
       <div

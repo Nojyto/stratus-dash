@@ -56,6 +56,7 @@ const engines: Record<
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 50 50"
+          fill="currentColor"
           width="24px"
           height="24px"
         >
@@ -113,11 +114,14 @@ export function SearchBar({ initialEngine }: SearchBarProps) {
     <div className="w-full max-w-lg">
       <form onSubmit={handleSearch} className="relative flex items-center">
         <Input
+          name="searchquery"
           type="search"
           placeholder="Search the web..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-12 rounded-full border-0 border-border bg-secondary/50 pl-5 pr-14 text-base backdrop-blur-sm transition-colors focus:bg-secondary/90 focus:ring-2 focus:ring-accent"
+          tabIndex={100}
+          autoComplete="off"
+          className="h-12 rounded-full border-0 bg-secondary/50 pl-5 pr-14 text-base backdrop-blur-sm transition-colors hover:bg-secondary/75 focus:bg-secondary/90 focus-visible:ring-2 focus-visible:ring-accent-foreground/50 focus-visible:ring-offset-0"
         />
 
         <ContextMenu>
