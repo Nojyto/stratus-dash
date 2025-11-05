@@ -45,7 +45,13 @@ import {
 } from "@dnd-kit/sortable"
 import { Edit, Lock, Plus, Settings, Shuffle, Unlock } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useEffect, useRef, useState, useTransition } from "react"
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react"
 import { QuickLinkItem } from "./quick-link-item"
 import { SearchBar } from "./search-bar"
 
@@ -53,6 +59,7 @@ type NewTabContentProps = {
   initialLinks: QuickLink[]
   initialSettings: UserSettings | null
   initialWallpaper: WallpaperInfo
+  authButton: ReactNode
 }
 
 const FALLBACK_ARTIST = "Unknown"
@@ -62,6 +69,7 @@ export function NewTabContent({
   initialLinks,
   initialSettings,
   initialWallpaper,
+  authButton,
 }: NewTabContentProps) {
   const { theme } = useTheme()
   const [links, setLinks] = useState(initialLinks)
@@ -266,6 +274,7 @@ export function NewTabContent({
             initialGradientTo={initialSettings?.gradient_to ?? null}
           />
         )}
+        {authButton}
       </div>
 
       <ClientOnly>

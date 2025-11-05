@@ -15,7 +15,12 @@ export function LogoutButton() {
   }
 
   return (
-    <Button onClick={logout} variant="outline" size="sm">
+    <Button
+      onClick={logout}
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 rounded-full"
+    >
       <LogOut />
     </Button>
   )

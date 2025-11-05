@@ -1,3 +1,4 @@
+import { AuthButton } from "@/components/common/auth-button"
 import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
@@ -21,6 +22,7 @@ export async function NewTabData() {
       initialLinks={links}
       initialSettings={settings}
       initialWallpaper={wallpaper}
+      authButton={<AuthButton />}
     />
   )
 }
