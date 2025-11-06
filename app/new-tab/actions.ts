@@ -2,9 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { unsplash } from "@/lib/unsplash"
-import { revalidatePath } from "next/cache"
+import { unstable_cache as cache, revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { unstable_cache as cache } from "next/cache"
 
 export type QuickLink = {
   id: string
@@ -21,6 +20,8 @@ export type UserSettings = {
   wallpaper_query: string
   gradient_from: string | null
   gradient_to: string | null
+  weather_lat: number | null
+  weather_lon: number | null
 }
 
 export type WallpaperInfo = {
@@ -30,15 +31,119 @@ export type WallpaperInfo = {
   isLocked: boolean
 }
 
+export type CurrentWeather = {
+  temp: number
+  min_temp: number
+  max_temp: number
+  icon: string
+  description: string
+  wind_speed: number
+  wind_deg: number
+  pop: number
+}
+
+export type HourlyWeather = {
+  time: string
+  temp: number
+  icon: string
+  description: string
+  pop: number
+}
+
+export type WeatherData = {
+  current: CurrentWeather
+  hourly: HourlyWeather[]
+}
+
 export type NewTabItems = {
   links: QuickLink[]
   settings: UserSettings | null
   wallpaper: WallpaperInfo
+  weather: WeatherData | null
+}
+
+type OpenWeatherForecastItem = {
+  dt: number
+  main: {
+    temp: number
+  }
+  weather: {
+    icon: string
+    description: string
+  }[]
+  pop: number
 }
 
 const FALLBACK_WALLPAPER_URL = "/default-wallpaper.jpg"
 const FALLBACK_ARTIST = "Local Image"
 const FALLBACK_ARTIST_URL = "#"
+
+const getWeatherForCoords = cache(
+  async (lat: number, lon: number): Promise<WeatherData | null> => {
+    const apiKey = process.env.OPENWEATHER_API_KEY
+    if (!apiKey) {
+      console.error("OPENWEATHER_API_KEY is not set.")
+      return null
+    }
+
+    const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+
+    try {
+      const [currentRes, forecastRes] = await Promise.all([
+        fetch(currentWeatherUrl),
+        fetch(forecastUrl),
+      ])
+
+      if (!currentRes.ok) {
+        const errorData = await currentRes.json()
+        console.error(
+          "Failed to fetch current weather data:",
+          errorData.message
+        )
+        return null
+      }
+      if (!forecastRes.ok) {
+        const errorData = await forecastRes.json()
+        console.error("Failed to fetch forecast data:", errorData.message)
+        return null
+      }
+
+      const currentData = await currentRes.json()
+      const forecastData = await forecastRes.json()
+
+      return {
+        current: {
+          temp: Math.round(currentData.main.temp),
+          min_temp: Math.floor(currentData.main.temp_min),
+          max_temp: Math.ceil(currentData.main.temp_max),
+          icon: currentData.weather[0].icon,
+          description: currentData.weather[0].description,
+          wind_speed: Math.round(currentData.wind.speed),
+          wind_deg: currentData.wind.deg,
+          pop: Math.round(forecastData.list[0].pop * 100),
+        },
+        hourly: forecastData.list
+          .slice(0, 5)
+          .map((hour: OpenWeatherForecastItem) => ({
+            time: new Date(hour.dt * 1000).getHours().toString(),
+            temp: Math.round(hour.main.temp),
+            icon: hour.weather[0].icon,
+            description: hour.weather[0].description,
+            pop: Math.round(hour.pop * 100),
+          })),
+      }
+    } catch (e) {
+      console.error(
+        "Error fetching or parsing weather data:",
+        e instanceof Error ? e.message : String(e)
+      )
+      return null
+    }
+  },
+  ["weather-data"],
+  { revalidate: 900 }
+)
 
 async function fetchFreshRandomWallpaper(
   query: string
@@ -107,7 +212,7 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     supabase
       .from("user_settings")
       .select(
-        "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to"
+        "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon"
       )
       .eq("user_id", user.id)
       .maybeSingle(),
@@ -120,6 +225,14 @@ export async function getNewTabItems(): Promise<NewTabItems> {
 
   const settings = settingsResult.data
   let wallpaper: WallpaperInfo
+  let weather: WeatherData | null = null
+
+  if (settings?.weather_lat != null && settings?.weather_lon != null) {
+    weather = await getWeatherForCoords(
+      settings.weather_lat,
+      settings.weather_lon
+    )
+  }
 
   if (
     settings?.wallpaper_mode !== "gradient" &&
@@ -150,27 +263,34 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     }
   }
 
+  const formattedSettings: UserSettings = settings
+    ? {
+        user_id: settings.user_id,
+        default_search_engine: settings.default_search_engine,
+        wallpaper_mode: settings.wallpaper_mode ?? "image",
+        wallpaper_query:
+          settings.wallpaper_query ?? "nature landscape wallpaper",
+        gradient_from: settings.gradient_from ?? "220 70% 50%",
+        gradient_to: settings.gradient_to ?? "280 65% 60%",
+        weather_lat: settings.weather_lat,
+        weather_lon: settings.weather_lon,
+      }
+    : {
+        user_id: user.id,
+        default_search_engine: "google",
+        wallpaper_mode: "image",
+        wallpaper_query: "nature landscape wallpaper",
+        gradient_from: "220 70% 50%",
+        gradient_to: "280 65% 60%",
+        weather_lat: null,
+        weather_lon: null,
+      }
+
   return {
     links: (linksResult.data as QuickLink[]) ?? [],
-    settings: settings
-      ? {
-          user_id: settings.user_id,
-          default_search_engine: settings.default_search_engine,
-          wallpaper_mode: settings.wallpaper_mode ?? "image",
-          wallpaper_query:
-            settings.wallpaper_query ?? "nature landscape wallpaper",
-          gradient_from: settings.gradient_from ?? "220 70% 50%",
-          gradient_to: settings.gradient_to ?? "280 65% 60%",
-        }
-      : {
-          user_id: user.id,
-          default_search_engine: "google",
-          wallpaper_mode: "image",
-          wallpaper_query: "nature landscape wallpaper",
-          gradient_from: "220 70% 50%",
-          gradient_to: "280 65% 60%",
-        },
+    settings: formattedSettings,
     wallpaper,
+    weather,
   }
 }
 
@@ -236,6 +356,8 @@ export async function updateNewTabSettings(settings: {
   wallpaper_query?: string
   gradient_from?: string | null
   gradient_to?: string | null
+  weather_lat?: number | null
+  weather_lon?: number | null
 }) {
   const supabase = await createClient()
   const {
@@ -247,6 +369,27 @@ export async function updateNewTabSettings(settings: {
     {
       user_id: user.id,
       ...settings,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  )
+
+  if (error) return { success: false, error: error.message }
+  revalidatePath("/new-tab")
+  return { success: true }
+}
+
+export async function updateSearchEngine(engine: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("User not authenticated")
+
+  const { error } = await supabase.from("user_settings").upsert(
+    {
+      user_id: user.id,
+      default_search_engine: engine,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" }
@@ -362,27 +505,6 @@ export async function updateLinkOrder(
     return { success: false, error: errorMessage }
   }
 
-  revalidatePath("/new-tab")
-  return { success: true }
-}
-
-export async function updateSearchEngine(engine: string) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
-
-  const { error } = await supabase.from("user_settings").upsert(
-    {
-      user_id: user.id,
-      default_search_engine: engine,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" }
-  )
-
-  if (error) return { success: false, error: error.message }
   revalidatePath("/new-tab")
   return { success: true }
 }

@@ -10,6 +10,7 @@ import {
   type QuickLink,
   type UserSettings,
   type WallpaperInfo,
+  type WeatherData,
 } from "@/app/new-tab/actions"
 import { ClientOnly } from "@/components/common/client-only"
 import { ThemeCustomizer } from "@/components/common/theme-customizer"
@@ -23,6 +24,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import {
   applyCustomTheme,
   getSavedTheme,
@@ -45,6 +47,8 @@ import {
 } from "@dnd-kit/sortable"
 import { Edit, Lock, Plus, Settings, Shuffle, Unlock } from "lucide-react"
 import { useTheme } from "next-themes"
+import dynamic from "next/dynamic"
+import { useRouter } from "next/navigation"
 import {
   useEffect,
   useRef,
@@ -54,11 +58,41 @@ import {
 } from "react"
 import { QuickLinkItem } from "./quick-link-item"
 import { SearchBar } from "./search-bar"
+import { WeatherWidget } from "./weather-widget"
+
+const LocationPickerSkeleton = () => (
+  <div className="grid gap-4">
+    <div className="shimmer-bg h-[200px] w-full rounded-md" />
+    <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-1">
+        <Label htmlFor="lat" className="text-xs">
+          Latitude
+        </Label>
+        <div className="shimmer-bg h-8 w-full rounded-md" />
+      </div>
+      <div className="grid gap-1">
+        <Label htmlFor="lon" className="text-xs">
+          Longitude
+        </Label>
+        <div className="shimmer-bg h-8 w-full rounded-md" />
+      </div>
+    </div>
+  </div>
+)
+
+const LocationPicker = dynamic(
+  () => import("./location-picker").then((mod) => mod.LocationPicker),
+  {
+    ssr: false,
+    loading: () => <LocationPickerSkeleton />,
+  }
+)
 
 type NewTabContentProps = {
   initialLinks: QuickLink[]
   initialSettings: UserSettings | null
   initialWallpaper: WallpaperInfo
+  initialWeather: WeatherData | null
   authButton: ReactNode
 }
 
@@ -70,8 +104,10 @@ export function NewTabContent({
   initialSettings,
   initialWallpaper,
   authButton,
+  initialWeather,
 }: NewTabContentProps) {
   const { theme } = useTheme()
+  const router = useRouter()
   const [links, setLinks] = useState(initialLinks)
   const [isEditing, setIsEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -94,9 +130,11 @@ export function NewTabContent({
   const [gradientTo, setGradientTo] = useState(
     initialSettings?.gradient_to ?? "280 65% 60%"
   )
+  const [lat, setLat] = useState(initialSettings?.weather_lat ?? 51.5072)
+  const [lon, setLon] = useState(initialSettings?.weather_lon ?? -0.1276)
+
   const [isWallpaperPending, startWallpaperTransition] = useTransition()
 
-  // State to manage visibility of top-right controls
   const [isHovering, setIsHovering] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -228,12 +266,16 @@ export function NewTabContent({
         wallpaper_query: wallpaperQuery,
         gradient_from: gradientFrom,
         gradient_to: gradientTo,
+        weather_lat: lat,
+        weather_lon: lon,
       })
       const theme = getSavedTheme()
       theme["--gradient-from"] = gradientFrom
       theme["--gradient-to"] = gradientTo
       localStorage.setItem("custom-theme", JSON.stringify(theme))
       applyCustomTheme(theme)
+
+      router.refresh()
     })
     setIsSettingsOpen(false)
   }
@@ -249,261 +291,281 @@ export function NewTabContent({
   const artistName = formatArtistName(wallpaper.artist)
 
   return (
-    <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6 pt-32">
-      <div
-        className={cn(
-          "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
-          isVisible && "opacity-100 delay-0 duration-0"
-        )}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-      >
-        <Button
-          variant={isEditing ? "default" : "ghost"}
-          size="icon"
-          className="h-8 w-8 rounded-full"
-          onClick={() => setIsEditing(!isEditing)}
+    <TooltipProvider delayDuration={300}>
+      <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6 pt-32">
+        <div className="absolute left-6 top-6 text-white">
+          <WeatherWidget initialData={initialWeather} />
+        </div>
+
+        <div
+          className={cn(
+            "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
+            isVisible && "opacity-100 delay-0 duration-0"
+          )}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
         >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
-        {theme === "custom" && (
-          <ThemeCustomizer
-            onOpenChangeAction={setIsMenuOpen}
-            initialGradientFrom={initialSettings?.gradient_from ?? null}
-            initialGradientTo={initialSettings?.gradient_to ?? null}
-          />
-        )}
-        {authButton}
-      </div>
+          <Button
+            variant={isEditing ? "default" : "ghost"}
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
+          {theme === "custom" && (
+            <ThemeCustomizer
+              onOpenChangeAction={setIsMenuOpen}
+              initialGradientFrom={initialSettings?.gradient_from ?? null}
+              initialGradientTo={initialSettings?.gradient_to ?? null}
+            />
+          )}
+          {authButton}
+        </div>
 
-      <ClientOnly>
-        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          <SortableContext items={links.map((l) => l.id)}>
-            <div className="flex max-w-lg flex-wrap items-start justify-center gap-x-4 gap-y-6">
-              {links.map((link, i) => (
-                <QuickLinkItem
-                  key={link.id}
-                  link={link}
-                  isEditing={isEditing}
-                  tabIndex={i}
-                  onDeleteAction={(id) =>
-                    setLinks(links.filter((l) => l.id !== id))
-                  }
-                  onUpdateAction={(updatedLink) =>
-                    setLinks(
-                      links.map((l) =>
-                        l.id === updatedLink.id ? updatedLink : l
+        <ClientOnly>
+          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            <SortableContext items={links.map((l) => l.id)}>
+              <div className="flex max-w-lg flex-wrap items-start justify-center gap-x-4 gap-y-6">
+                {links.map((link, i) => (
+                  <QuickLinkItem
+                    key={link.id}
+                    link={link}
+                    isEditing={isEditing}
+                    tabIndex={i}
+                    onDeleteAction={(id) =>
+                      setLinks(links.filter((l) => l.id !== id))
+                    }
+                    onUpdateAction={(updatedLink) =>
+                      setLinks(
+                        links.map((l) =>
+                          l.id === updatedLink.id ? updatedLink : l
+                        )
                       )
-                    )
-                  }
-                />
-              ))}
-
-              {isEditing && (
-                <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <div className="flex w-20 flex-col items-center gap-1.5">
-                      <Button
-                        variant="outline"
-                        className="h-14 w-14 rounded-full border-dashed"
-                        aria-label="Add new quick link"
-                        tabIndex={links.length}
-                      >
-                        <Plus className="h-9 w-9 text-muted-foreground" />
-                      </Button>
-                      <span className="w-full text-center text-xs text-muted-foreground">
-                        Add Link
-                      </span>
-                    </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <form onSubmit={handleAddLink} className="grid gap-4">
-                      <div className="space-y-2">
-                        <h4 className="font-medium leading-none">
-                          Add new link
-                        </h4>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="title">Title (Optional)</Label>
-                        <Input
-                          id="title"
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
-                          placeholder="e.g., Google"
-                          className="h-9"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="url">URL (Required)</Label>
-                        <Input
-                          id="url"
-                          value={url}
-                          onChange={(e) => setUrl(e.target.value)}
-                          placeholder="example.com"
-                          className="h-9"
-                          required
-                        />
-                      </div>
-                      <Button type="submit" disabled={isPending}>
-                        {isPending ? "Adding..." : "Add Link"}
-                      </Button>
-                    </form>
-                  </PopoverContent>
-                </Popover>
-              )}
-            </div>
-          </SortableContext>
-        </DndContext>
-
-        <SearchBar
-          initialEngine={initialSettings?.default_search_engine ?? "google"}
-        />
-      </ClientOnly>
-
-      {/* Wallpaper Controls */}
-      <div
-        className={cn(
-          "absolute bottom-6 left-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
-          isVisible && "opacity-100 delay-0 duration-0"
-        )}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-      >
-        <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium leading-none">Display Settings</h4>
-              </div>
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="wallpaper-mode">Image Mode</Label>
-                  <Switch
-                    id="wallpaper-mode"
-                    checked={wallpaperMode === "image"}
-                    onCheckedChange={(checked) =>
-                      setWallpaperMode(checked ? "image" : "gradient")
                     }
                   />
-                </div>
-                {wallpaperMode === "image" ? (
-                  <div className="grid gap-1">
-                    <Label htmlFor="wallpaper-query" className="text-xs">
-                      Wallpaper Query
-                    </Label>
-                    <Input
-                      id="wallpaper-query"
-                      value={wallpaperQuery}
-                      onChange={(e) => setWallpaperQuery(e.target.value)}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    <Label className="text-xs">Gradient Colors</Label>
-                    <div className="flex items-center gap-2">
-                      <div className="relative h-5 w-5">
-                        <input
-                          type="color"
-                          id="gradient-from-picker"
-                          value={hslStringToHex(gradientFrom)}
-                          onChange={(e) =>
-                            setGradientFrom(hexToHslString(e.target.value))
-                          }
-                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <Label
-                          htmlFor="gradient-from-picker"
-                          className="block h-full w-full cursor-pointer rounded-full border"
-                          style={{
-                            backgroundColor: `hsl(${gradientFrom})`,
-                          }}
-                        />
+                ))}
+
+                {isEditing && (
+                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <div className="flex w-20 flex-col items-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          className="h-14 w-14 rounded-full border-dashed"
+                          aria-label="Add new quick link"
+                          tabIndex={links.length}
+                        >
+                          <Plus className="h-9 w-9 text-muted-foreground" />
+                        </Button>
+                        <span className="w-full text-center text-xs text-muted-foreground">
+                          Add Link
+                        </span>
                       </div>
-                      <Label htmlFor="gradient-from-picker" className="text-xs">
-                        From
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="relative h-5 w-5">
-                        <input
-                          type="color"
-                          id="gradient-to-picker"
-                          value={hslStringToHex(gradientTo)}
-                          onChange={(e) =>
-                            setGradientTo(hexToHslString(e.target.value))
-                          }
-                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <Label
-                          htmlFor="gradient-to-picker"
-                          className="block h-full w-full cursor-pointer rounded-full border"
-                          style={{
-                            backgroundColor: `hsl(${gradientTo})`,
-                          }}
-                        />
-                      </div>
-                      <Label htmlFor="gradient-to-picker" className="text-xs">
-                        To
-                      </Label>
-                    </div>
-                  </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <form onSubmit={handleAddLink} className="grid gap-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium leading-none">
+                            Add new link
+                          </h4>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="title">Title (Optional)</Label>
+                          <Input
+                            id="title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="e.g., Google"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="url">URL (Required)</Label>
+                          <Input
+                            id="url"
+                            value={url}
+                            onChange={(e) => setUrl(e.target.value)}
+                            placeholder="example.com"
+                            className="h-9"
+                            required
+                          />
+                        </div>
+                        <Button type="submit" disabled={isPending}>
+                          {isPending ? "Adding..." : "Add Link"}
+                        </Button>
+                      </form>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
-              <Button onClick={handleSettingsSave} disabled={isPending}>
-                Save Settings
-              </Button>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </SortableContext>
+          </DndContext>
 
-        {wallpaperMode === "image" && (
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={handleToggleLockWallpaper}
-              disabled={isWallpaperPending}
-            >
-              {isLocked ? (
-                <Lock className="h-4 w-4" />
-              ) : (
-                <Unlock className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={handleRandomizeWallpaper}
-              disabled={isWallpaperPending}
-            >
-              <Shuffle className="h-4 w-4" />
-            </Button>
-            {artistName && (
-              <a
-                href={wallpaper.photoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 rounded-full bg-black/30 px-3 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/50"
+          <SearchBar
+            initialEngine={
+              initialSettings?.default_search_engine ?? "duckduckgo"
+            }
+          />
+        </ClientOnly>
+
+        {/* Wallpaper Controls */}
+        <div
+          className={cn(
+            "absolute bottom-6 left-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
+            isVisible && "opacity-100 delay-0 duration-0"
+          )}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
               >
-                Photo by {artistName}
-              </a>
-            )}
-          </>
-        )}
+                <Settings className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Display Settings</h4>
+                </div>
+                <div className="grid gap-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="wallpaper-mode">Image Mode</Label>
+                    <Switch
+                      id="wallpaper-mode"
+                      checked={wallpaperMode === "image"}
+                      onCheckedChange={(checked) =>
+                        setWallpaperMode(checked ? "image" : "gradient")
+                      }
+                    />
+                  </div>
+                  {wallpaperMode === "image" ? (
+                    <div className="grid gap-1">
+                      <Label htmlFor="wallpaper-query" className="text-xs">
+                        Wallpaper Query
+                      </Label>
+                      <Input
+                        id="wallpaper-query"
+                        value={wallpaperQuery}
+                        onChange={(e) => setWallpaperQuery(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid gap-3">
+                      <Label className="text-xs">Gradient Colors</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="relative h-5 w-5">
+                          <input
+                            type="color"
+                            id="gradient-from-picker"
+                            value={hslStringToHex(gradientFrom)}
+                            onChange={(e) =>
+                              setGradientFrom(hexToHslString(e.target.value))
+                            }
+                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          />
+                          <Label
+                            htmlFor="gradient-from-picker"
+                            className="block h-full w-full cursor-pointer rounded-full border"
+                            style={{
+                              backgroundColor: `hsl(${gradientFrom})`,
+                            }}
+                          />
+                        </div>
+                        <Label
+                          htmlFor="gradient-from-picker"
+                          className="text-xs"
+                        >
+                          From
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="relative h-5 w-5">
+                          <input
+                            type="color"
+                            id="gradient-to-picker"
+                            value={hslStringToHex(gradientTo)}
+                            onChange={(e) =>
+                              setGradientTo(hexToHslString(e.target.value))
+                            }
+                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          />
+                          <Label
+                            htmlFor="gradient-to-picker"
+                            className="block h-full w-full cursor-pointer rounded-full border"
+                            style={{
+                              backgroundColor: `hsl(${gradientTo})`,
+                            }}
+                          />
+                        </div>
+                        <Label htmlFor="gradient-to-picker" className="text-xs">
+                          To
+                        </Label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="grid gap-4">
+                  <Label className="text-xs">Weather Location</Label>
+                  <LocationPicker
+                    lat={lat}
+                    lon={lon}
+                    onLatChange={setLat}
+                    onLonChange={setLon}
+                  />
+                </div>
+                <Button onClick={handleSettingsSave} disabled={isPending}>
+                  Save Settings
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {wallpaperMode === "image" && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleToggleLockWallpaper}
+                disabled={isWallpaperPending}
+              >
+                {isLocked ? (
+                  <Lock className="h-4 w-4" />
+                ) : (
+                  <Unlock className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={handleRandomizeWallpaper}
+                disabled={isWallpaperPending}
+              >
+                <Shuffle className="h-4 w-4" />
+              </Button>
+              {artistName && (
+                <a
+                  href={wallpaper.photoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 rounded-full bg-black/30 px-3 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/50"
+                >
+                  Photo by {artistName}
+                </a>
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

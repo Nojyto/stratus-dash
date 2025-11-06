@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "icons.duckduckgo.com",
         pathname: "/ip3/**",
       },
+      {
+        protocol: "https",
+        hostname: "openweathermap.org",
+        pathname: "/img/wn/**",
+      },
     ],
   },
 }

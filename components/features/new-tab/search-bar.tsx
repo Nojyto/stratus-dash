@@ -86,7 +86,7 @@ const engineKeys = Object.keys(engines)
 export function SearchBar({ initialEngine }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [engineKey, setEngineKey] = useState(
-    engineKeys.includes(initialEngine) ? initialEngine : "google"
+    engineKeys.includes(initialEngine) ? initialEngine : "duckduckgo"
   )
   const [isPending, startTransition] = useTransition()
 
