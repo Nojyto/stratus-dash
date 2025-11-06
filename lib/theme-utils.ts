@@ -86,6 +86,11 @@ export const colorKeys = [
 
 export type ColorTheme = Partial<Record<(typeof colorKeys)[number], string>>
 
+export type CustomThemeData = {
+  colors: ColorTheme
+  isDark: boolean
+}
+
 export function applyCustomTheme(colors: ColorTheme) {
   const root = document.documentElement
   if (!root) return
@@ -104,22 +109,38 @@ export function clearCustomTheme() {
   const saved = localStorage.getItem("custom-theme")
   if (!saved) return
   try {
-    const colors = JSON.parse(saved)
+    const { colors } = getSavedTheme()
     for (const key of Object.keys(colors)) {
       root.style.removeProperty(key)
     }
+    root.classList.remove("dark")
   } catch (e) {
     console.error("Failed to clear custom theme", e)
   }
 }
 
-export function getSavedTheme(): ColorTheme {
+export function getSavedTheme(): CustomThemeData {
   try {
     const saved = localStorage.getItem("custom-theme")
-    return saved ? JSON.parse(saved) : {}
+    if (!saved) return { colors: {}, isDark: false }
+
+    const data = JSON.parse(saved)
+    if (data.colors === undefined && data.isDark === undefined) {
+      return { colors: data, isDark: false } // Assume old themes were light
+    }
+
+    return data as CustomThemeData
   } catch (e) {
     console.error("Failed to get saved theme", e)
-    return {}
+    return { colors: {}, isDark: false }
+  }
+}
+
+export function applySavedTheme() {
+  const { colors, isDark } = getSavedTheme()
+  if (Object.keys(colors).length > 0) {
+    applyCustomTheme(colors)
+    document.documentElement.classList.toggle("dark", isDark)
   }
 }
 
@@ -137,9 +158,9 @@ export function generateHarmoniousTheme(isDark: boolean): ColorTheme {
   const mutedFgL = isDark ? 60 : 40
   const primarySat = 70
   const primaryL = 50
-  const primaryFgL = isDark ? 10 : 90
+  const primaryFgL = isDark ? 90 : 10
   const accentSat = 60
-  const accentL = 55
+  const accentL = isDark ? 45 : 55
   const accentFgL = isDark ? 98 : 4
 
   return {

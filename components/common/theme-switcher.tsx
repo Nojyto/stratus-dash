@@ -8,7 +8,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Laptop, Moon, Sun } from "lucide-react"
+import { applySavedTheme, clearCustomTheme } from "@/lib/theme-utils"
+import { Laptop, Moon, Paintbrush, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 
@@ -24,8 +25,19 @@ export function ThemeSwitcher({
     setMounted(true)
   }, [])
 
+  const handleThemeChange = (newTheme: string) => {
+    if (newTheme === "custom") {
+      applySavedTheme()
+    } else {
+      clearCustomTheme()
+    }
+    setTheme(newTheme)
+  }
+
   if (!mounted) {
-    return null
+    return (
+      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" />
+    )
   }
 
   const ICON_SIZE = 16
@@ -37,17 +49,16 @@ export function ThemeSwitcher({
           {theme === "light" ? (
             <Sun key="light" size={ICON_SIZE} />
           ) : theme === "dark" ? (
-            <Moon key="light" size={ICON_SIZE} />
+            <Moon key="dark" size={ICON_SIZE} />
+          ) : theme === "custom" ? (
+            <Paintbrush key="custom" size={ICON_SIZE} />
           ) : (
             <Laptop key="system" size={ICON_SIZE} />
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-content" align="start">
-        <DropdownMenuRadioGroup
-          value={theme}
-          onValueChange={(e) => setTheme(e)}
-        >
+      <DropdownMenuContent className="w-content" align="end">
+        <DropdownMenuRadioGroup value={theme} onValueChange={handleThemeChange}>
           <DropdownMenuRadioItem className="flex gap-2" value="light">
             <Sun size={ICON_SIZE} className="text-muted-foreground" />
             <span>Light</span>
@@ -59,6 +70,10 @@ export function ThemeSwitcher({
           <DropdownMenuRadioItem className="flex gap-2" value="system">
             <Laptop size={ICON_SIZE} className="text-muted-foreground" />
             <span>System</span>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem className="flex gap-2" value="custom">
+            <Paintbrush size={ICON_SIZE} className="text-muted-foreground" />
+            <span>Custom</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>

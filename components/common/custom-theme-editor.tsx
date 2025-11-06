@@ -11,8 +11,9 @@ import {
 import { Switch } from "@/components/ui/switch"
 import {
   applyCustomTheme,
+  applySavedTheme,
   colorKeys,
-  ColorTheme,
+  type ColorTheme,
   generateHarmoniousTheme,
   getSavedTheme,
   hexToHslString,
@@ -22,24 +23,26 @@ import { Paintbrush, Shuffle } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 
-export function ThemeCustomizer({
-  onOpenChangeAction,
+export function CustomThemeEditor({
   initialGradientFrom,
   initialGradientTo,
+  onOpenChangeAction,
 }: {
-  onOpenChangeAction: (open: boolean) => void
   initialGradientFrom: string | null
   initialGradientTo: string | null
+  onOpenChangeAction: (open: boolean) => void
 }) {
   const [mounted, setMounted] = useState(false)
-  const { resolvedTheme } = useTheme()
+  const { theme } = useTheme()
+  const [popoverOpen, setPopoverOpen] = useState(false)
+
   const [customColors, setCustomColors] = useState<ColorTheme>({})
   const [defaultStyles, setDefaultStyles] = useState<ColorTheme>({})
-  const [isDarkForHarmonize, setIsDarkForHarmonize] = useState(false)
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    const savedColors = getSavedTheme()
+    const { colors: savedColors, isDark: savedIsDark } = getSavedTheme()
     const computed = getComputedStyle(document.documentElement)
     const defaults: ColorTheme = {}
     for (const key of colorKeys) {
@@ -57,9 +60,8 @@ export function ThemeCustomizer({
         initialGradientTo ??
         defaults["--gradient-to"],
     })
-
-    setIsDarkForHarmonize(resolvedTheme === "dark")
-  }, [resolvedTheme, initialGradientFrom, initialGradientTo])
+    setIsDark(savedIsDark)
+  }, [initialGradientFrom, initialGradientTo])
 
   const handleColorChange = (
     key: (typeof colorKeys)[number],
@@ -71,31 +73,50 @@ export function ThemeCustomizer({
   }
 
   const handleRandomize = () => {
-    const newTheme = generateHarmoniousTheme(isDarkForHarmonize)
+    const newTheme = generateHarmoniousTheme(isDark)
     setCustomColors(newTheme)
     applyCustomTheme(newTheme)
+    document.documentElement.classList.toggle("dark", isDark)
+  }
+
+  const handleIsDarkChange = (checked: boolean) => {
+    setIsDark(checked)
+    const newTheme = generateHarmoniousTheme(checked)
+    setCustomColors(newTheme)
+    applyCustomTheme(newTheme)
+    document.documentElement.classList.toggle("dark", checked)
   }
 
   const onPopoverOpenChange = (open: boolean) => {
     if (!open) {
-      localStorage.setItem("custom-theme", JSON.stringify(customColors))
+      localStorage.setItem(
+        "custom-theme",
+        JSON.stringify({
+          colors: customColors,
+          isDark: isDark,
+        })
+      )
+      if (theme === "custom") {
+        applySavedTheme()
+      }
       updateNewTabSettings({
         gradient_from: customColors["--gradient-from"],
         gradient_to: customColors["--gradient-to"],
       })
     }
+    setPopoverOpen(open)
     onOpenChangeAction(open)
   }
 
-  if (!mounted) {
-    return <Button variant="ghost" size="sm" className="h-8 w-8" />
+  if (!mounted || theme !== "custom") {
+    return null
   }
 
   return (
-    <Popover onOpenChange={onPopoverOpenChange}>
+    <Popover open={popoverOpen} onOpenChange={onPopoverOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-          <Paintbrush className="h-4 w-4 text-muted-foreground" />
+          <Paintbrush size={16} className="text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[340px]" align="end">
@@ -154,8 +175,8 @@ export function ThemeCustomizer({
             <div className="flex items-center space-x-2">
               <Switch
                 id="dark-mode-toggle"
-                checked={isDarkForHarmonize}
-                onCheckedChange={setIsDarkForHarmonize}
+                checked={isDark}
+                onCheckedChange={handleIsDarkChange}
               />
               <Label htmlFor="dark-mode-toggle" className="text-xs">
                 Dark

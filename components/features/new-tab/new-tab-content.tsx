@@ -13,7 +13,7 @@ import {
   type WeatherData,
 } from "@/app/new-tab/actions"
 import { ClientOnly } from "@/components/common/client-only"
-import { ThemeCustomizer } from "@/components/common/theme-customizer"
+import { CustomThemeEditor } from "@/components/common/custom-theme-editor"
 import { ThemeSwitcher } from "@/components/common/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,7 +46,6 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable"
 import { Edit, Lock, Plus, Settings, Shuffle, Unlock } from "lucide-react"
-import { useTheme } from "next-themes"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import {
@@ -106,7 +105,6 @@ export function NewTabContent({
   authButton,
   initialWeather,
 }: NewTabContentProps) {
-  const { theme } = useTheme()
   const router = useRouter()
   const [links, setLinks] = useState(initialLinks)
   const [isEditing, setIsEditing] = useState(false)
@@ -138,7 +136,14 @@ export function NewTabContent({
   const [isHovering, setIsHovering] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const isVisible = isHovering || isMenuOpen || isEditing || isSettingsOpen
+  const [isCustomThemeEditorOpen, setIsCustomThemeEditorOpen] = useState(false)
+
+  const isVisible =
+    isHovering ||
+    isMenuOpen ||
+    isEditing ||
+    isSettingsOpen ||
+    isCustomThemeEditorOpen
 
   const didDragEnd = useRef(false)
   const sensors = useSensors(
@@ -269,11 +274,12 @@ export function NewTabContent({
         weather_lat: lat,
         weather_lon: lon,
       })
-      const theme = getSavedTheme()
-      theme["--gradient-from"] = gradientFrom
-      theme["--gradient-to"] = gradientTo
-      localStorage.setItem("custom-theme", JSON.stringify(theme))
-      applyCustomTheme(theme)
+      const themeData = getSavedTheme()
+      themeData.colors["--gradient-from"] = gradientFrom
+      themeData.colors["--gradient-to"] = gradientTo
+
+      localStorage.setItem("custom-theme", JSON.stringify(themeData))
+      applyCustomTheme(themeData.colors)
 
       router.refresh()
     })
@@ -313,14 +319,12 @@ export function NewTabContent({
           >
             <Edit className="h-4 w-4" />
           </Button>
+          <CustomThemeEditor
+            onOpenChangeAction={setIsCustomThemeEditorOpen}
+            initialGradientFrom={initialSettings?.gradient_from ?? null}
+            initialGradientTo={initialSettings?.gradient_to ?? null}
+          />
           <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
-          {theme === "custom" && (
-            <ThemeCustomizer
-              onOpenChangeAction={setIsMenuOpen}
-              initialGradientFrom={initialSettings?.gradient_from ?? null}
-              initialGradientTo={initialSettings?.gradient_to ?? null}
-            />
-          )}
           {authButton}
         </div>
 
