@@ -1,16 +1,31 @@
 "use server"
 
 import type { WallpaperInfo } from "@/app/new-tab/actions"
-import { unsplash } from "@/lib/external/unsplash"
 import { unstable_cache as cache } from "next/cache"
+import { createApi } from "unsplash-js"
 
 const FALLBACK_WALLPAPER_URL = "/default-wallpaper.jpg"
 const FALLBACK_ARTIST = "Local Image"
 const FALLBACK_ARTIST_URL = "#"
 
+const unsplash = createApi({
+  accessKey: process.env.UNSPLASH_ACCESS_KEY!,
+})
+
 export async function fetchFreshRandomWallpaper(
   query: string
 ): Promise<Omit<WallpaperInfo, "isLocked">> {
+  if (!process.env.UNSPLASH_ACCESS_KEY) {
+    console.warn(
+      "UNSPLASH_ACCESS_KEY is not set. Returning fallback wallpaper."
+    )
+    return {
+      url: FALLBACK_WALLPAPER_URL,
+      artist: FALLBACK_ARTIST,
+      photoUrl: FALLBACK_ARTIST_URL,
+    }
+  }
+
   try {
     const result = await unsplash.photos.getRandom({
       orientation: "landscape",

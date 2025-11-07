@@ -1,20 +1,10 @@
-import { redirect } from "next/navigation"
-
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/server"
+import { getSupabaseWithUser } from "@/lib/supabase/utils"
 import { InfoIcon } from "lucide-react"
 import Link from "next/link"
 
 export default async function ProtectedPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  const { user } = await getSupabaseWithUser()
 
   return (
     <div className="flex w-full flex-1 flex-col items-center gap-12">
