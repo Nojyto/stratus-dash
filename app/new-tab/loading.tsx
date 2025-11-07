@@ -1,4 +1,4 @@
-export function NewTabSkeleton() {
+export default function Loading() {
   return (
     <div className="flex h-full w-full flex-1 flex-col items-center justify-start gap-12 p-6 pt-32">
       {/* Top Left Weather Placeholder */}

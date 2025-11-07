@@ -37,7 +37,7 @@ const LocationPickerSkeleton = () => (
 )
 
 const LocationPicker = dynamic(
-  () => import("./location-picker").then((mod) => mod.LocationPicker),
+  () => import("./weather/location-picker").then((mod) => mod.LocationPicker),
   {
     ssr: false,
     loading: () => <LocationPickerSkeleton />,

@@ -1,7 +1,7 @@
 "use server"
 
 import type { WallpaperInfo } from "@/app/new-tab/actions"
-import { unsplash } from "@/lib/unsplash"
+import { unsplash } from "@/lib/external/unsplash"
 import { unstable_cache as cache } from "next/cache"
 
 const FALLBACK_WALLPAPER_URL = "/default-wallpaper.jpg"

@@ -14,12 +14,12 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { Edit } from "lucide-react"
 import { useState, type ReactNode } from "react"
-import { BackgroundManager } from "./background-manager"
 import { NewTabSettings } from "./new-tab-settings"
-import { QuickLinksGrid } from "./quick-links-grid"
+import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { SearchBar } from "./search-bar"
-import { WallpaperControls } from "./wallpaper-controls"
-import { WeatherWidget } from "./weather-widget"
+import { WallpaperControls } from "./wallpaper/wallpaper-controls"
+import { BackgroundManager } from "./wallpaper/background-manager"
+import { WeatherWidget } from "./weather/weather-widget"
 
 type NewTabContentProps = {
   initialLinks: QuickLink[]

@@ -5,8 +5,8 @@ import { getSupabaseWithUser } from "@/lib/supabase/utils"
 import {
   fetchFreshRandomWallpaper,
   getCachedRandomWallpaper,
-} from "@/lib/wallpaper"
-import { getWeatherForCoords } from "@/lib/weather"
+} from "@/lib/external/wallpaper"
+import { getWeatherForCoords } from "@/lib/external/weather"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -62,7 +62,7 @@ export type WeatherData = {
 
 export type NewTabItems = {
   links: QuickLink[]
-  settings: UserSettings | null
+  settings: UserSettings
   wallpaper: WallpaperInfo
   weather: WeatherData | null
 }
