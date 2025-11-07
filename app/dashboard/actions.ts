@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { getSupabaseWithUser } from "@/lib/supabase/utils"
 import { revalidatePath } from "next/cache"
 
 export type Note = {
@@ -57,12 +58,7 @@ export async function getDashboardItems(): Promise<DashboardItems> {
 export async function createNote(
   note: Pick<Note, "title" | "folder_id">
 ): Promise<Note | null> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const { data, error } = await supabase
     .from("notes")
@@ -83,7 +79,8 @@ export async function updateNote(
   id: string,
   note: Partial<Pick<Note, "title" | "content">>
 ): Promise<Note | null> {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
+
   const { data, error } = await supabase
     .from("notes")
     .update(note)
@@ -100,7 +97,7 @@ export async function updateNote(
 }
 
 export async function deleteNote(id: string): Promise<{ success: boolean }> {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
   const { error } = await supabase.from("notes").delete().eq("id", id)
 
   if (error) {
@@ -115,12 +112,7 @@ export async function deleteNote(id: string): Promise<{ success: boolean }> {
 export async function createFolder(
   folder: Pick<Folder, "name" | "parent_id">
 ): Promise<Folder | null> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const { data, error } = await supabase
     .from("folders")
@@ -140,7 +132,8 @@ export async function updateFolder(
   id: string,
   folder: Partial<Pick<Folder, "name">>
 ): Promise<Folder | null> {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
+
   const { data, error } = await supabase
     .from("folders")
     .update(folder)
@@ -157,7 +150,7 @@ export async function updateFolder(
 }
 
 export async function deleteFolder(id: string): Promise<{ success: boolean }> {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
   const { error } = await supabase.from("folders").delete().eq("id", id)
   // The ON DELETE CASCADE rule in the schema will handle deleting sub-folders and notes.
   if (error) {

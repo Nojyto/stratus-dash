@@ -1,8 +1,13 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { unsplash } from "@/lib/unsplash"
-import { unstable_cache as cache, revalidatePath } from "next/cache"
+import { getSupabaseWithUser } from "@/lib/supabase/utils"
+import {
+  fetchFreshRandomWallpaper,
+  getCachedRandomWallpaper,
+} from "@/lib/wallpaper"
+import { getWeatherForCoords } from "@/lib/weather"
+import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 export type QuickLink = {
@@ -61,137 +66,6 @@ export type NewTabItems = {
   wallpaper: WallpaperInfo
   weather: WeatherData | null
 }
-
-type OpenWeatherForecastItem = {
-  dt: number
-  main: {
-    temp: number
-  }
-  weather: {
-    icon: string
-    description: string
-  }[]
-  pop: number
-}
-
-const FALLBACK_WALLPAPER_URL = "/default-wallpaper.jpg"
-const FALLBACK_ARTIST = "Local Image"
-const FALLBACK_ARTIST_URL = "#"
-
-const getWeatherForCoords = cache(
-  async (lat: number, lon: number): Promise<WeatherData | null> => {
-    const apiKey = process.env.OPENWEATHER_API_KEY
-    if (!apiKey) {
-      console.error("OPENWEATHER_API_KEY is not set.")
-      return null
-    }
-
-    const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
-    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
-
-    try {
-      const [currentRes, forecastRes] = await Promise.all([
-        fetch(currentWeatherUrl),
-        fetch(forecastUrl),
-      ])
-
-      if (!currentRes.ok) {
-        const errorData = await currentRes.json()
-        console.error(
-          "Failed to fetch current weather data:",
-          errorData.message
-        )
-        return null
-      }
-      if (!forecastRes.ok) {
-        const errorData = await forecastRes.json()
-        console.error("Failed to fetch forecast data:", errorData.message)
-        return null
-      }
-
-      const currentData = await currentRes.json()
-      const forecastData = await forecastRes.json()
-
-      return {
-        current: {
-          temp: Math.round(currentData.main.temp),
-          min_temp: Math.floor(currentData.main.temp_min),
-          max_temp: Math.ceil(currentData.main.temp_max),
-          icon: currentData.weather[0].icon,
-          description: currentData.weather[0].description,
-          wind_speed: Math.round(currentData.wind.speed),
-          wind_deg: currentData.wind.deg,
-          pop: Math.round(forecastData.list[0].pop * 100),
-        },
-        hourly: forecastData.list
-          .slice(0, 5)
-          .map((hour: OpenWeatherForecastItem) => ({
-            time: new Date(hour.dt * 1000).getHours().toString(),
-            temp: Math.round(hour.main.temp),
-            icon: hour.weather[0].icon,
-            description: hour.weather[0].description,
-            pop: Math.round(hour.pop * 100),
-          })),
-      }
-    } catch (e) {
-      console.error(
-        "Error fetching or parsing weather data:",
-        e instanceof Error ? e.message : String(e)
-      )
-      return null
-    }
-  },
-  ["weather-data"],
-  { revalidate: 900 }
-)
-
-async function fetchFreshRandomWallpaper(
-  query: string
-): Promise<Omit<WallpaperInfo, "isLocked">> {
-  try {
-    const result = await unsplash.photos.getRandom({
-      orientation: "landscape",
-      query: query || "nature landscape wallpaper",
-    })
-
-    if (result.errors || !result.response) {
-      console.warn("Unsplash API Error:", result.errors)
-      return {
-        url: FALLBACK_WALLPAPER_URL,
-        artist: FALLBACK_ARTIST,
-        photoUrl: FALLBACK_ARTIST_URL,
-      }
-    }
-
-    const photo = Array.isArray(result.response)
-      ? result.response[0]
-      : result.response
-
-    return {
-      url: photo.urls.regular,
-      artist: photo.user.name,
-      photoUrl: photo.links.html,
-    }
-  } catch (e) {
-    console.warn(
-      "Failed to fetch from Unsplash, returning fallback. Error:",
-      e instanceof Error ? e.message : String(e)
-    )
-    return {
-      url: FALLBACK_WALLPAPER_URL,
-      artist: FALLBACK_ARTIST,
-      photoUrl: FALLBACK_ARTIST_URL,
-    }
-  }
-}
-
-const getCachedRandomWallpaper = cache(
-  async (query: string): Promise<Omit<WallpaperInfo, "isLocked">> => {
-    return fetchFreshRandomWallpaper(query)
-  },
-  ["random-wallpaper"],
-  { revalidate: 3600 }
-)
 
 export async function getNewTabItems(): Promise<NewTabItems> {
   const supabase = await createClient()
@@ -305,11 +179,7 @@ export async function lockWallpaper(
   artist: string,
   photoUrl: string
 ) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const { error } = await supabase.from("user_settings").upsert(
     {
@@ -329,11 +199,7 @@ export async function lockWallpaper(
 }
 
 export async function unlockWallpaper() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const { error } = await supabase.from("user_settings").upsert(
     {
@@ -359,11 +225,7 @@ export async function updateNewTabSettings(settings: {
   weather_lat?: number | null
   weather_lon?: number | null
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const { error } = await supabase.from("user_settings").upsert(
     {
@@ -380,11 +242,7 @@ export async function updateNewTabSettings(settings: {
 }
 
 export async function updateSearchEngine(engine: string) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const { error } = await supabase.from("user_settings").upsert(
     {
@@ -401,7 +259,8 @@ export async function updateSearchEngine(engine: string) {
 }
 
 async function getNextSortOrder(userId: string): Promise<number> {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
+
   const { data, error } = await supabase
     .from("quick_links")
     .select("sort_order")
@@ -417,11 +276,7 @@ async function getNextSortOrder(userId: string): Promise<number> {
 }
 
 export async function createQuickLink(formData: FormData) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const title = (formData.get("title") as string) || null
   const url = formData.get("url") as string
@@ -447,7 +302,8 @@ export async function createQuickLink(formData: FormData) {
 }
 
 export async function updateQuickLink(formData: FormData) {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
+
   const id = formData.get("id") as string
   const title = (formData.get("title") as string) || null
   const url = formData.get("url") as string
@@ -470,7 +326,7 @@ export async function updateQuickLink(formData: FormData) {
 }
 
 export async function deleteQuickLink(id: string) {
-  const supabase = await createClient()
+  const { supabase } = await getSupabaseWithUser()
   const { error } = await supabase.from("quick_links").delete().eq("id", id)
 
   if (error) return { success: false, error: error.message }
@@ -481,11 +337,7 @@ export async function deleteQuickLink(id: string) {
 export async function updateLinkOrder(
   links: { id: string; sort_order: number }[]
 ) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error("User not authenticated")
+  const { supabase, user } = await getSupabaseWithUser()
 
   const updates = links.map((link) =>
     supabase

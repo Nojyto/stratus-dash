@@ -1,12 +1,6 @@
 "use client"
 
 import {
-  createQuickLink,
-  getRandomWallpaper,
-  lockWallpaper,
-  unlockWallpaper,
-  updateLinkOrder,
-  updateNewTabSettings,
   type QuickLink,
   type UserSettings,
   type WallpaperInfo,
@@ -16,87 +10,24 @@ import { ClientOnly } from "@/components/common/client-only"
 import { CustomThemeEditor } from "@/components/common/custom-theme-editor"
 import { ThemeSwitcher } from "@/components/common/theme-switcher"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Switch } from "@/components/ui/switch"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import {
-  applyCustomTheme,
-  getSavedTheme,
-  hexToHslString,
-  hslStringToHex,
-} from "@/lib/theme-utils"
 import { cn } from "@/lib/utils"
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable"
-import { Edit, Lock, Plus, Settings, Shuffle, Unlock } from "lucide-react"
-import dynamic from "next/dynamic"
-import { useRouter } from "next/navigation"
-import {
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-  type ReactNode,
-} from "react"
-import { QuickLinkItem } from "./quick-link-item"
+import { Edit } from "lucide-react"
+import { useState, type ReactNode } from "react"
+import { BackgroundManager } from "./background-manager"
+import { NewTabSettings } from "./new-tab-settings"
+import { QuickLinksGrid } from "./quick-links-grid"
 import { SearchBar } from "./search-bar"
+import { WallpaperControls } from "./wallpaper-controls"
 import { WeatherWidget } from "./weather-widget"
-
-const LocationPickerSkeleton = () => (
-  <div className="grid gap-4">
-    <div className="shimmer-bg h-[200px] w-full rounded-md" />
-    <div className="grid grid-cols-2 gap-2">
-      <div className="grid gap-1">
-        <Label htmlFor="lat" className="text-xs">
-          Latitude
-        </Label>
-        <div className="shimmer-bg h-8 w-full rounded-md" />
-      </div>
-      <div className="grid gap-1">
-        <Label htmlFor="lon" className="text-xs">
-          Longitude
-        </Label>
-        <div className="shimmer-bg h-8 w-full rounded-md" />
-      </div>
-    </div>
-  </div>
-)
-
-const LocationPicker = dynamic(
-  () => import("./location-picker").then((mod) => mod.LocationPicker),
-  {
-    ssr: false,
-    loading: () => <LocationPickerSkeleton />,
-  }
-)
 
 type NewTabContentProps = {
   initialLinks: QuickLink[]
-  initialSettings: UserSettings | null
+  initialSettings: UserSettings
   initialWallpaper: WallpaperInfo
   initialWeather: WeatherData | null
   authButton: ReactNode
 }
-
-const FALLBACK_ARTIST = "Unknown"
-const LOCAL_ARTIST = "Local Image"
 
 export function NewTabContent({
   initialLinks,
@@ -105,37 +36,28 @@ export function NewTabContent({
   authButton,
   initialWeather,
 }: NewTabContentProps) {
-  const router = useRouter()
-  const [links, setLinks] = useState(initialLinks)
   const [isEditing, setIsEditing] = useState(false)
-  const [isPending, startTransition] = useTransition()
-  const [popoverOpen, setPopoverOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [url, setUrl] = useState("")
 
-  // Wallpaper state
-  const [wallpaper, setWallpaper] = useState(initialWallpaper)
-  const [isLocked, setIsLocked] = useState(initialWallpaper.isLocked)
+  // State for settings, lifted up to be shared
   const [wallpaperMode, setWallpaperMode] = useState(
-    initialSettings?.wallpaper_mode ?? "image"
+    initialSettings.wallpaper_mode
   )
   const [wallpaperQuery, setWallpaperQuery] = useState(
-    initialSettings?.wallpaper_query ?? "nature landscape wallpaper"
+    initialSettings.wallpaper_query
   )
   const [gradientFrom, setGradientFrom] = useState(
-    initialSettings?.gradient_from ?? "220 70% 50%"
+    initialSettings.gradient_from ?? "220 70% 50%"
   )
   const [gradientTo, setGradientTo] = useState(
-    initialSettings?.gradient_to ?? "280 65% 60%"
+    initialSettings.gradient_to ?? "280 65% 60%"
   )
-  const [lat, setLat] = useState(initialSettings?.weather_lat ?? 51.5072)
-  const [lon, setLon] = useState(initialSettings?.weather_lon ?? -0.1276)
+  const [lat, setLat] = useState(initialSettings.weather_lat ?? 51.5072)
+  const [lon, setLon] = useState(initialSettings.weather_lon ?? -0.1276)
 
-  const [isWallpaperPending, startWallpaperTransition] = useTransition()
-
+  // UI visibility state
   const [isHovering, setIsHovering] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isSettingsOpen] = useState(false)
   const [isCustomThemeEditorOpen, setIsCustomThemeEditorOpen] = useState(false)
 
   const isVisible =
@@ -145,159 +67,14 @@ export function NewTabContent({
     isSettingsOpen ||
     isCustomThemeEditorOpen
 
-  const didDragEnd = useRef(false)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  // Apply wallpaper to the page background
-  useEffect(() => {
-    document.documentElement.style.setProperty("--gradient-from", gradientFrom)
-    document.documentElement.style.setProperty("--gradient-to", gradientTo)
-
-    if (wallpaperMode === "image") {
-      document.documentElement.style.setProperty(
-        "--bg-image",
-        `url(${wallpaper.url})`
-      )
-      document.body.classList.add("bg-image-active")
-      document.body.classList.remove("bg-gradient-active")
-    } else {
-      document.documentElement.style.removeProperty("--bg-image")
-      document.body.classList.remove("bg-image-active")
-      document.body.classList.add("bg-gradient-active")
-    }
-
-    return () => {
-      document.documentElement.style.removeProperty("--bg-image")
-      document.body.classList.remove("bg-image-active")
-      document.body.classList.remove("bg-gradient-active")
-    }
-  }, [wallpaper.url, wallpaperMode, gradientFrom, gradientTo])
-
-  useEffect(() => {
-    if (!didDragEnd.current) {
-      return
-    }
-    didDragEnd.current = false
-    const linksToUpdate = links.map((link, index) => ({
-      id: link.id,
-      sort_order: index,
-    }))
-    startTransition(async () => {
-      await updateLinkOrder(linksToUpdate)
-    })
-  }, [links, startTransition])
-
-  const handleAddLink = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    startTransition(async () => {
-      const formData = new FormData()
-      formData.append("title", title)
-      formData.append("url", url)
-
-      const result = await createQuickLink(formData)
-      if (result.success) {
-        setLinks([
-          ...links,
-          {
-            id: crypto.randomUUID(),
-            title: title || null,
-            url,
-            user_id: initialSettings?.user_id ?? "",
-            sort_order: links.length,
-          },
-        ])
-        setTitle("")
-        setUrl("")
-        setPopoverOpen(false)
-      } else {
-        console.error(result.error)
-      }
-    })
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (over && active.id !== over.id) {
-      didDragEnd.current = true
-
-      setLinks((currentLinks) => {
-        const oldIndex = currentLinks.findIndex((l) => l.id === active.id)
-        const newIndex = currentLinks.findIndex((l) => l.id === over.id)
-        return arrayMove(currentLinks, oldIndex, newIndex)
-      })
-    }
-  }
-
-  const handleRandomizeWallpaper = () => {
-    startWallpaperTransition(async () => {
-      const newWallpaper = await getRandomWallpaper(wallpaperQuery)
-      setWallpaper({ ...newWallpaper, isLocked: false })
-      setIsLocked(false)
-      setWallpaperMode("image")
-      await unlockWallpaper()
-      await updateNewTabSettings({
-        wallpaper_mode: "image",
-        wallpaper_query: wallpaperQuery,
-      })
-    })
-  }
-
-  const handleToggleLockWallpaper = () => {
-    startWallpaperTransition(async () => {
-      if (isLocked) {
-        await unlockWallpaper()
-        setIsLocked(false)
-      } else {
-        await lockWallpaper(wallpaper.url, wallpaper.artist, wallpaper.photoUrl)
-        setIsLocked(true)
-        setWallpaperMode("image")
-      }
-    })
-  }
-
-  const handleSettingsSave = () => {
-    startWallpaperTransition(async () => {
-      await updateNewTabSettings({
-        wallpaper_mode: wallpaperMode,
-        wallpaper_query: wallpaperQuery,
-        gradient_from: gradientFrom,
-        gradient_to: gradientTo,
-        weather_lat: lat,
-        weather_lon: lon,
-      })
-      const themeData = getSavedTheme()
-      themeData.colors["--gradient-from"] = gradientFrom
-      themeData.colors["--gradient-to"] = gradientTo
-
-      localStorage.setItem("custom-theme", JSON.stringify(themeData))
-      applyCustomTheme(themeData.colors)
-
-      router.refresh()
-    })
-    setIsSettingsOpen(false)
-  }
-
-  const formatArtistName = (name: string) => {
-    if (!name || name === FALLBACK_ARTIST || name === LOCAL_ARTIST) return null
-    const parts = name.split(" ")
-    if (parts.length > 1) {
-      return `${parts[0][0]}. ${parts.slice(1).join(" ")}`
-    }
-    return name
-  }
-  const artistName = formatArtistName(wallpaper.artist)
-
   return (
     <TooltipProvider delayDuration={300}>
+      <BackgroundManager
+        wallpaperMode={wallpaperMode}
+        wallpaperUrl={initialWallpaper.url}
+        gradientFrom={gradientFrom}
+        gradientTo={gradientTo}
+      />
       <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6 pt-32">
         <div className="absolute left-6 top-6 text-white">
           <WeatherWidget initialData={initialWeather} />
@@ -321,96 +98,22 @@ export function NewTabContent({
           </Button>
           <CustomThemeEditor
             onOpenChangeAction={setIsCustomThemeEditorOpen}
-            initialGradientFrom={initialSettings?.gradient_from ?? null}
-            initialGradientTo={initialSettings?.gradient_to ?? null}
+            initialGradientFrom={initialSettings.gradient_from}
+            initialGradientTo={initialSettings.gradient_to}
           />
           <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
           {authButton}
         </div>
 
         <ClientOnly>
-          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <SortableContext items={links.map((l) => l.id)}>
-              <div className="flex max-w-lg flex-wrap items-start justify-center gap-x-4 gap-y-6">
-                {links.map((link, i) => (
-                  <QuickLinkItem
-                    key={link.id}
-                    link={link}
-                    isEditing={isEditing}
-                    tabIndex={i}
-                    onDeleteAction={(id) =>
-                      setLinks(links.filter((l) => l.id !== id))
-                    }
-                    onUpdateAction={(updatedLink) =>
-                      setLinks(
-                        links.map((l) =>
-                          l.id === updatedLink.id ? updatedLink : l
-                        )
-                      )
-                    }
-                  />
-                ))}
-
-                {isEditing && (
-                  <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <div className="flex w-20 flex-col items-center gap-1.5">
-                        <Button
-                          variant="outline"
-                          className="h-14 w-14 rounded-full border-dashed"
-                          aria-label="Add new quick link"
-                          tabIndex={links.length}
-                        >
-                          <Plus className="h-9 w-9 text-muted-foreground" />
-                        </Button>
-                        <span className="w-full text-center text-xs text-muted-foreground">
-                          Add Link
-                        </span>
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <form onSubmit={handleAddLink} className="grid gap-4">
-                        <div className="space-y-2">
-                          <h4 className="font-medium leading-none">
-                            Add new link
-                          </h4>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="title">Title (Optional)</Label>
-                          <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g., Google"
-                            className="h-9"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="url">URL (Required)</Label>
-                          <Input
-                            id="url"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            placeholder="example.com"
-                            className="h-9"
-                            required
-                          />
-                        </div>
-                        <Button type="submit" disabled={isPending}>
-                          {isPending ? "Adding..." : "Add Link"}
-                        </Button>
-                      </form>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-            </SortableContext>
-          </DndContext>
+          <QuickLinksGrid
+            initialLinks={initialLinks}
+            isEditing={isEditing}
+            userId={initialSettings.user_id}
+          />
 
           <SearchBar
-            initialEngine={
-              initialSettings?.default_search_engine ?? "duckduckgo"
-            }
+            initialEngine={initialSettings.default_search_engine ?? "google"}
           />
         </ClientOnly>
 
@@ -423,151 +126,27 @@ export function NewTabContent({
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
         >
-          <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium leading-none">Display Settings</h4>
-                </div>
-                <div className="grid gap-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="wallpaper-mode">Image Mode</Label>
-                    <Switch
-                      id="wallpaper-mode"
-                      checked={wallpaperMode === "image"}
-                      onCheckedChange={(checked) =>
-                        setWallpaperMode(checked ? "image" : "gradient")
-                      }
-                    />
-                  </div>
-                  {wallpaperMode === "image" ? (
-                    <div className="grid gap-1">
-                      <Label htmlFor="wallpaper-query" className="text-xs">
-                        Wallpaper Query
-                      </Label>
-                      <Input
-                        id="wallpaper-query"
-                        value={wallpaperQuery}
-                        onChange={(e) => setWallpaperQuery(e.target.value)}
-                        className="h-8 text-xs"
-                      />
-                    </div>
-                  ) : (
-                    <div className="grid gap-3">
-                      <Label className="text-xs">Gradient Colors</Label>
-                      <div className="flex items-center gap-2">
-                        <div className="relative h-5 w-5">
-                          <input
-                            type="color"
-                            id="gradient-from-picker"
-                            value={hslStringToHex(gradientFrom)}
-                            onChange={(e) =>
-                              setGradientFrom(hexToHslString(e.target.value))
-                            }
-                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                          />
-                          <Label
-                            htmlFor="gradient-from-picker"
-                            className="block h-full w-full cursor-pointer rounded-full border"
-                            style={{
-                              backgroundColor: `hsl(${gradientFrom})`,
-                            }}
-                          />
-                        </div>
-                        <Label
-                          htmlFor="gradient-from-picker"
-                          className="text-xs"
-                        >
-                          From
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="relative h-5 w-5">
-                          <input
-                            type="color"
-                            id="gradient-to-picker"
-                            value={hslStringToHex(gradientTo)}
-                            onChange={(e) =>
-                              setGradientTo(hexToHslString(e.target.value))
-                            }
-                            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                          />
-                          <Label
-                            htmlFor="gradient-to-picker"
-                            className="block h-full w-full cursor-pointer rounded-full border"
-                            style={{
-                              backgroundColor: `hsl(${gradientTo})`,
-                            }}
-                          />
-                        </div>
-                        <Label htmlFor="gradient-to-picker" className="text-xs">
-                          To
-                        </Label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="grid gap-4">
-                  <Label className="text-xs">Weather Location</Label>
-                  <LocationPicker
-                    lat={lat}
-                    lon={lon}
-                    onLatChange={setLat}
-                    onLonChange={setLon}
-                  />
-                </div>
-                <Button onClick={handleSettingsSave} disabled={isPending}>
-                  Save Settings
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <NewTabSettings
+            initialSettings={initialSettings}
+            wallpaperMode={wallpaperMode}
+            setWallpaperModeAction={setWallpaperMode}
+            wallpaperQuery={wallpaperQuery}
+            setWallpaperQueryAction={setWallpaperQuery}
+            gradientFrom={gradientFrom}
+            setGradientFromAction={setGradientFrom}
+            gradientTo={gradientTo}
+            setGradientToAction={setGradientTo}
+            lat={lat}
+            setLatAction={setLat}
+            lon={lon}
+            setLonAction={setLon}
+          />
 
-          {wallpaperMode === "image" && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={handleToggleLockWallpaper}
-                disabled={isWallpaperPending}
-              >
-                {isLocked ? (
-                  <Lock className="h-4 w-4" />
-                ) : (
-                  <Unlock className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={handleRandomizeWallpaper}
-                disabled={isWallpaperPending}
-              >
-                <Shuffle className="h-4 w-4" />
-              </Button>
-              {artistName && (
-                <a
-                  href={wallpaper.photoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-2 rounded-full bg-black/30 px-3 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/50"
-                >
-                  Photo by {artistName}
-                </a>
-              )}
-            </>
-          )}
+          <WallpaperControls
+            initialWallpaper={initialWallpaper}
+            initialWallpaperQuery={initialSettings.wallpaper_query}
+            wallpaperMode={wallpaperMode}
+          />
         </div>
       </div>
     </TooltipProvider>
