@@ -1,14 +1,20 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
-import { getSupabaseWithUser } from "@/lib/supabase/utils"
 import {
   fetchFreshRandomWallpaper,
   getCachedRandomWallpaper,
 } from "@/lib/external/wallpaper"
 import { getWeatherForCoords } from "@/lib/external/weather"
-import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabase/server"
+import { getSupabaseWithUser } from "@/lib/supabase/utils"
+import { revalidatePath, revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
+
+export type FormState = {
+  error?: string
+  success?: boolean
+  message?: string
+}
 
 export type QuickLink = {
   id: string
@@ -168,10 +174,29 @@ export async function getNewTabItems(): Promise<NewTabItems> {
   }
 }
 
-export async function getRandomWallpaper(
+export async function refreshWallpaper(
   query: string
 ): Promise<Omit<WallpaperInfo, "isLocked">> {
-  return fetchFreshRandomWallpaper(query)
+  const { supabase, user } = await getSupabaseWithUser()
+  const newWallpaper = await fetchFreshRandomWallpaper(query)
+
+  await supabase.from("user_settings").upsert(
+    {
+      user_id: user.id,
+      wallpaper_url: null,
+      wallpaper_artist: null,
+      wallpaper_photo_url: null,
+      wallpaper_query: query,
+      wallpaper_mode: "image",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  )
+
+  revalidatePath("/new-tab")
+  revalidateTag("random-wallpaper-cache")
+
+  return newWallpaper
 }
 
 export async function lockWallpaper(
@@ -214,6 +239,7 @@ export async function unlockWallpaper() {
 
   if (error) return { success: false, error: error.message }
   revalidatePath("/new-tab")
+  revalidateTag("random-wallpaper-cache")
   return { success: true }
 }
 
@@ -275,12 +301,17 @@ async function getNextSortOrder(userId: string): Promise<number> {
   return (data.sort_order ?? 0) + 1
 }
 
-export async function createQuickLink(formData: FormData) {
+export async function createQuickLink(
+  prevState: FormState | null,
+  formData: FormData
+): Promise<FormState> {
   const { supabase, user } = await getSupabaseWithUser()
 
   const title = (formData.get("title") as string) || null
   const url = formData.get("url") as string
-  if (!url) throw new Error("URL is required")
+  if (!url) {
+    return { error: "URL is required" }
+  }
 
   const prefixedUrl =
     url.startsWith("http://") || url.startsWith("https://")
@@ -296,19 +327,26 @@ export async function createQuickLink(formData: FormData) {
     sort_order: sortOrder,
   })
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    return { error: error.message }
+  }
   revalidatePath("/new-tab")
   return { success: true }
 }
 
-export async function updateQuickLink(formData: FormData) {
+export async function updateQuickLink(
+  prevState: FormState | null,
+  formData: FormData
+): Promise<FormState> {
   const { supabase } = await getSupabaseWithUser()
 
   const id = formData.get("id") as string
   const title = (formData.get("title") as string) || null
   const url = formData.get("url") as string
 
-  if (!id || !url) throw new Error("ID and URL are required")
+  if (!id || !url) {
+    return { error: "ID and URL are required" }
+  }
 
   const prefixedUrl =
     url.startsWith("http://") || url.startsWith("https://")
@@ -320,16 +358,23 @@ export async function updateQuickLink(formData: FormData) {
     .update({ title, url: prefixedUrl })
     .eq("id", id)
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    return { error: error.message }
+  }
   revalidatePath("/new-tab")
   return { success: true }
 }
 
-export async function deleteQuickLink(id: string) {
+export async function deleteQuickLink(
+  prevState: FormState | null,
+  id: string
+): Promise<FormState> {
   const { supabase } = await getSupabaseWithUser()
   const { error } = await supabase.from("quick_links").delete().eq("id", id)
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    return { error: error.message }
+  }
   revalidatePath("/new-tab")
   return { success: true }
 }

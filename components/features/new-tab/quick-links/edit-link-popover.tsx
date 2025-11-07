@@ -1,7 +1,11 @@
 "use client"
 
-import type { QuickLink } from "@/app/new-tab/actions"
-import { deleteQuickLink, updateQuickLink } from "@/app/new-tab/actions"
+import {
+  deleteQuickLink,
+  updateQuickLink,
+  type FormState,
+  type QuickLink,
+} from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,7 +15,34 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Edit, Trash2 } from "lucide-react"
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
+import { useFormState, useFormStatus } from "react-dom"
+
+function EditFormButtons({
+  onDelete,
+  deletePending,
+}: {
+  onDelete: () => void
+  deletePending: boolean
+}) {
+  const { pending } = useFormStatus()
+  return (
+    <div className="flex justify-between gap-2">
+      <Button
+        type="button"
+        variant="destructive"
+        onClick={onDelete}
+        disabled={pending || deletePending}
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        {deletePending ? "Deleting..." : "Delete"}
+      </Button>
+      <Button type="submit" disabled={pending || deletePending}>
+        {pending ? "Saving..." : "Save Changes"}
+      </Button>
+    </div>
+  )
+}
 
 type EditLinkPopoverProps = {
   link: QuickLink
@@ -22,55 +53,32 @@ type EditLinkPopoverProps = {
 export function EditLinkPopover({
   link,
   onDeleteAction,
-  onUpdateAction,
 }: EditLinkPopoverProps) {
-  const [isPending, startTransition] = useTransition()
+  const [isDeletePending, startDeleteTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
 
-  // Form state
-  const [title, setTitle] = useState(link.title || "")
-  const [url, setUrl] = useState(link.url)
-
-  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    startTransition(async () => {
-      const formData = new FormData()
-      formData.append("id", link.id)
-      formData.append("title", title)
-      formData.append("url", url)
-
-      const result = await updateQuickLink(formData)
-      if (result.success) {
-        onUpdateAction({
-          ...link,
-          title: title || null,
-          url,
-        })
-        setPopoverOpen(false)
-      } else {
-        console.error(result.error)
-      }
-    })
-  }
+  const [state, formAction] = useFormState<FormState | null, FormData>(
+    updateQuickLink,
+    null
+  )
 
   const handleDelete = () => {
-    startTransition(async () => {
+    startDeleteTransition(async () => {
       onDeleteAction(link.id)
       setPopoverOpen(false)
-      await deleteQuickLink(link.id)
+      await deleteQuickLink(null, link.id)
     })
   }
 
-  const onOpenChange = (open: boolean) => {
-    if (open) {
-      setTitle(link.title || "")
-      setUrl(link.url)
+  // Close popover on successful save
+  useEffect(() => {
+    if (state?.success) {
+      setPopoverOpen(false)
     }
-    setPopoverOpen(open)
-  }
+  }, [state])
 
   return (
-    <Popover open={popoverOpen} onOpenChange={onOpenChange}>
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -81,43 +89,37 @@ export function EditLinkPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80">
-        <form onSubmit={handleUpdate} className="grid gap-4">
+        <form action={formAction} className="grid gap-4">
+          <input type="hidden" name="id" value={link.id} />
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Edit link</h4>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="edit-title">Title (Optional)</Label>
+            <Label htmlFor={`edit-title-${link.id}`}>Title (Optional)</Label>
             <Input
-              id="edit-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              id={`edit-title-${link.id}`}
+              name="title"
+              defaultValue={link.title || ""}
               className="h-9"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="edit-url">URL (Required)</Label>
+            <Label htmlFor={`edit-url-${link.id}`}>URL (Required)</Label>
             <Input
-              id="edit-url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              id={`edit-url-${link.id}`}
+              name="url"
+              defaultValue={link.url}
               className="h-9"
               required
             />
           </div>
-          <div className="flex justify-between gap-2">
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isPending}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
+          {state?.error && (
+            <p className="text-sm text-red-500">{state.error}</p>
+          )}
+          <EditFormButtons
+            onDelete={handleDelete}
+            deletePending={isDeletePending}
+          />
         </form>
       </PopoverContent>
     </Popover>

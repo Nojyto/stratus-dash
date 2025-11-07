@@ -14,7 +14,7 @@ import { applyCustomTheme, getSavedTheme } from "@/lib/theme-utils"
 import { Settings } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 
 const LocationPickerSkeleton = () => (
   <div className="grid gap-4">
@@ -46,38 +46,37 @@ const LocationPicker = dynamic(
 
 type NewTabSettingsProps = {
   initialSettings: UserSettings
-  wallpaperMode: "image" | "gradient"
-  setWallpaperModeAction: (mode: "image" | "gradient") => void
-  wallpaperQuery: string
-  setWallpaperQueryAction: (query: string) => void
-  gradientFrom: string
-  setGradientFromAction: (color: string) => void
-  gradientTo: string
-  setGradientToAction: (color: string) => void
-  lat: number
-  setLatAction: (lat: number) => void
-  lon: number
-  setLonAction: (lon: number) => void
+  onWallpaperModeChangeAction: (mode: "image" | "gradient") => void
+  onOpenChangeAction: (open: boolean) => void
 }
 
 export function NewTabSettings({
   initialSettings,
-  wallpaperMode,
-  setWallpaperModeAction,
-  wallpaperQuery,
-  setWallpaperQueryAction,
-  gradientFrom,
-  setGradientFromAction,
-  gradientTo,
-  setGradientToAction,
-  lat,
-  setLatAction,
-  lon,
-  setLonAction,
+  onWallpaperModeChangeAction,
+  onOpenChangeAction,
 }: NewTabSettingsProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+
+  const [wallpaperMode, setWallpaperMode] = useState(
+    initialSettings.wallpaper_mode
+  )
+  const [wallpaperQuery, setWallpaperQuery] = useState(
+    initialSettings.wallpaper_query
+  )
+  const [gradientFrom, setGradientFrom] = useState(
+    initialSettings.gradient_from ?? "220 70% 50%"
+  )
+  const [gradientTo, setGradientTo] = useState(
+    initialSettings.gradient_to ?? "280 65% 60%"
+  )
+  const [lat, setLat] = useState(initialSettings.weather_lat ?? 51.5072)
+  const [lon, setLon] = useState(initialSettings.weather_lon ?? -0.1276)
+
+  useEffect(() => {
+    onWallpaperModeChangeAction(wallpaperMode)
+  }, [wallpaperMode, onWallpaperModeChangeAction])
 
   const handleSettingsSave = () => {
     startTransition(async () => {
@@ -89,10 +88,10 @@ export function NewTabSettings({
         weather_lat: lat,
         weather_lon: lon,
       })
+
       const themeData = getSavedTheme()
       themeData.colors["--gradient-from"] = gradientFrom
       themeData.colors["--gradient-to"] = gradientTo
-
       localStorage.setItem("custom-theme", JSON.stringify(themeData))
       applyCustomTheme(themeData.colors)
 
@@ -101,21 +100,21 @@ export function NewTabSettings({
     setIsSettingsOpen(false)
   }
 
-  // Reset local state to props when popover closes without saving
-  const onOpenChange = (open: boolean) => {
+  const handleOpenChange = (open: boolean) => {
     if (!open && !isPending) {
-      setWallpaperModeAction(initialSettings.wallpaper_mode)
-      setWallpaperQueryAction(initialSettings.wallpaper_query)
-      setGradientFromAction(initialSettings.gradient_from ?? "220 70% 50%")
-      setGradientToAction(initialSettings.gradient_to ?? "280 65% 60%")
-      setLatAction(initialSettings.weather_lat ?? 51.5072)
-      setLonAction(initialSettings.weather_lon ?? -0.1276)
+      setWallpaperMode(initialSettings.wallpaper_mode)
+      setWallpaperQuery(initialSettings.wallpaper_query)
+      setGradientFrom(initialSettings.gradient_from ?? "220 70% 50%")
+      setGradientTo(initialSettings.gradient_to ?? "280 65% 60%")
+      setLat(initialSettings.weather_lat ?? 51.5072)
+      setLon(initialSettings.weather_lon ?? -0.1276)
     }
     setIsSettingsOpen(open)
+    onOpenChangeAction(open)
   }
 
   return (
-    <Popover open={isSettingsOpen} onOpenChange={onOpenChange}>
+    <Popover open={isSettingsOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
           <Settings className="h-4 w-4" />
@@ -133,7 +132,7 @@ export function NewTabSettings({
                 id="wallpaper-mode"
                 checked={wallpaperMode === "image"}
                 onCheckedChange={(checked) =>
-                  setWallpaperModeAction(checked ? "image" : "gradient")
+                  setWallpaperMode(checked ? "image" : "gradient")
                 }
               />
             </div>
@@ -145,15 +144,12 @@ export function NewTabSettings({
                 <Input
                   id="wallpaper-query"
                   value={wallpaperQuery}
-                  onChange={(e) => setWallpaperQueryAction(e.target.value)}
+                  onChange={(e) => setWallpaperQuery(e.target.value)}
                   className="h-8 text-xs"
                 />
               </div>
             ) : (
-              <div className="grid gap-3">
-                <Label className="text-xs">Gradient Colors</Label>
-                {/* Gradient pickers could be added here, simplified for brevity */}
-              </div>
+              <div></div>
             )}
           </div>
           <div className="grid gap-4">
@@ -161,8 +157,8 @@ export function NewTabSettings({
             <LocationPicker
               lat={lat}
               lon={lon}
-              onLatChange={setLatAction}
-              onLonChange={setLonAction}
+              onLatChange={setLat}
+              onLonChange={setLon}
             />
           </div>
           <Button onClick={handleSettingsSave} disabled={isPending}>

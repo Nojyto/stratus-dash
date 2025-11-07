@@ -17,8 +17,8 @@ import { useState, type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { SearchBar } from "./search-bar"
-import { WallpaperControls } from "./wallpaper/wallpaper-controls"
 import { BackgroundManager } from "./wallpaper/background-manager"
+import { WallpaperControls } from "./wallpaper/wallpaper-controls"
 import { WeatherWidget } from "./weather/weather-widget"
 
 type NewTabContentProps = {
@@ -37,27 +37,14 @@ export function NewTabContent({
   initialWeather,
 }: NewTabContentProps) {
   const [isEditing, setIsEditing] = useState(false)
-
-  // State for settings, lifted up to be shared
   const [wallpaperMode, setWallpaperMode] = useState(
     initialSettings.wallpaper_mode
   )
-  const [wallpaperQuery, setWallpaperQuery] = useState(
-    initialSettings.wallpaper_query
-  )
-  const [gradientFrom, setGradientFrom] = useState(
-    initialSettings.gradient_from ?? "220 70% 50%"
-  )
-  const [gradientTo, setGradientTo] = useState(
-    initialSettings.gradient_to ?? "280 65% 60%"
-  )
-  const [lat, setLat] = useState(initialSettings.weather_lat ?? 51.5072)
-  const [lon, setLon] = useState(initialSettings.weather_lon ?? -0.1276)
 
   // UI visibility state
   const [isHovering, setIsHovering] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isSettingsOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isCustomThemeEditorOpen, setIsCustomThemeEditorOpen] = useState(false)
 
   const isVisible =
@@ -72,8 +59,8 @@ export function NewTabContent({
       <BackgroundManager
         wallpaperMode={wallpaperMode}
         wallpaperUrl={initialWallpaper.url}
-        gradientFrom={gradientFrom}
-        gradientTo={gradientTo}
+        gradientFrom={initialSettings.gradient_from ?? "220 70% 50%"}
+        gradientTo={initialSettings.gradient_to ?? "280 65% 60%"}
       />
       <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6 pt-32">
         <div className="absolute left-6 top-6 text-white">
@@ -128,18 +115,8 @@ export function NewTabContent({
         >
           <NewTabSettings
             initialSettings={initialSettings}
-            wallpaperMode={wallpaperMode}
-            setWallpaperModeAction={setWallpaperMode}
-            wallpaperQuery={wallpaperQuery}
-            setWallpaperQueryAction={setWallpaperQuery}
-            gradientFrom={gradientFrom}
-            setGradientFromAction={setGradientFrom}
-            gradientTo={gradientTo}
-            setGradientToAction={setGradientTo}
-            lat={lat}
-            setLatAction={setLat}
-            lon={lon}
-            setLonAction={setLon}
+            onWallpaperModeChangeAction={setWallpaperMode}
+            onOpenChangeAction={setIsSettingsOpen}
           />
 
           <WallpaperControls

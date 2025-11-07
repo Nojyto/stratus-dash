@@ -1,10 +1,9 @@
 "use client"
 
 import {
-  getRandomWallpaper,
   lockWallpaper,
+  refreshWallpaper,
   unlockWallpaper,
-  updateNewTabSettings,
   type WallpaperInfo,
 } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
@@ -32,14 +31,9 @@ export function WallpaperControls({
 
   const handleRandomizeWallpaper = () => {
     startWallpaperTransition(async () => {
-      const newWallpaper = await getRandomWallpaper(wallpaperQuery)
+      const newWallpaper = await refreshWallpaper(wallpaperQuery)
       setWallpaper({ ...newWallpaper, isLocked: false })
       setIsLocked(false)
-      await unlockWallpaper()
-      await updateNewTabSettings({
-        wallpaper_mode: "image",
-        wallpaper_query: wallpaperQuery,
-      })
     })
   }
 

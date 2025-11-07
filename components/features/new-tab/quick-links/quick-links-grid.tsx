@@ -3,6 +3,7 @@
 import {
   createQuickLink,
   updateLinkOrder,
+  type FormState,
   type QuickLink,
 } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
@@ -28,7 +29,17 @@ import {
 } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
 import { useEffect, useRef, useState, useTransition } from "react"
+import { useFormState, useFormStatus } from "react-dom"
 import { QuickLinkItem } from "./quick-link-item"
+
+function AddLinkButton() {
+  const { pending } = useFormStatus()
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? "Adding..." : "Add Link"}
+    </Button>
+  )
+}
 
 type QuickLinksGridProps = {
   initialLinks: QuickLink[]
@@ -39,13 +50,25 @@ type QuickLinksGridProps = {
 export function QuickLinksGrid({
   initialLinks,
   isEditing,
-  userId,
 }: QuickLinksGridProps) {
   const [links, setLinks] = useState(initialLinks)
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [url, setUrl] = useState("")
+
+  const [state, formAction] = useFormState<FormState | null, FormData>(
+    createQuickLink,
+    null
+  )
+
+  useEffect(() => {
+    setLinks(initialLinks)
+  }, [initialLinks])
+
+  useEffect(() => {
+    if (state?.success) {
+      setPopoverOpen(false)
+    }
+  }, [state])
 
   const didDragEnd = useRef(false)
   const sensors = useSensors(
@@ -73,34 +96,6 @@ export function QuickLinksGrid({
       await updateLinkOrder(linksToUpdate)
     })
   }, [links, startTransition])
-
-  const handleAddLink = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    startTransition(async () => {
-      const formData = new FormData()
-      formData.append("title", title)
-      formData.append("url", url)
-
-      const result = await createQuickLink(formData)
-      if (result.success) {
-        setLinks([
-          ...links,
-          {
-            id: crypto.randomUUID(),
-            title: title || null,
-            url,
-            user_id: userId,
-            sort_order: links.length,
-          },
-        ])
-        setTitle("")
-        setUrl("")
-        setPopoverOpen(false)
-      } else {
-        console.error(result.error)
-      }
-    })
-  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -154,7 +149,7 @@ export function QuickLinksGrid({
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-80">
-                <form onSubmit={handleAddLink} className="grid gap-4">
+                <form action={formAction} className="grid gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium leading-none">Add new link</h4>
                   </div>
@@ -162,8 +157,7 @@ export function QuickLinksGrid({
                     <Label htmlFor="title">Title (Optional)</Label>
                     <Input
                       id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      name="title"
                       placeholder="e.g., Google"
                       className="h-9"
                     />
@@ -172,16 +166,16 @@ export function QuickLinksGrid({
                     <Label htmlFor="url">URL (Required)</Label>
                     <Input
                       id="url"
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
+                      name="url"
                       placeholder="example.com"
                       className="h-9"
                       required
                     />
                   </div>
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? "Adding..." : "Add Link"}
-                  </Button>
+                  {state?.error && (
+                    <p className="text-sm text-red-500">{state.error}</p>
+                  )}
+                  <AddLinkButton />
                 </form>
               </PopoverContent>
             </Popover>

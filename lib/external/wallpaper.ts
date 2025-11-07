@@ -68,5 +68,8 @@ export const getCachedRandomWallpaper = cache(
     return fetchFreshRandomWallpaper(query)
   },
   ["random-wallpaper"],
-  { revalidate: 3600 }
+  {
+    revalidate: 3600,
+    tags: ["random-wallpaper-cache"],
+  }
 )
