@@ -4,9 +4,9 @@ import {
   lockWallpaper,
   refreshWallpaper,
   unlockWallpaper,
-  type WallpaperInfo,
 } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
+import type { WallpaperInfo } from "@/types/new-tab"
 import { Lock, Shuffle, Unlock } from "lucide-react"
 import { useState, useTransition } from "react"
 
@@ -15,9 +15,6 @@ type WallpaperControlsProps = {
   initialWallpaperQuery: string
   wallpaperMode: "image" | "gradient"
 }
-
-const FALLBACK_ARTIST = "Unknown"
-const LOCAL_ARTIST = "Local Image"
 
 export function WallpaperControls({
   initialWallpaper,
@@ -50,7 +47,7 @@ export function WallpaperControls({
   }
 
   const formatArtistName = (name: string) => {
-    if (!name || name === FALLBACK_ARTIST || name === LOCAL_ARTIST) return null
+    if (!name) return null
     const parts = name.split(" ")
     if (parts.length > 1) {
       return `${parts[0][0]}. ${parts.slice(1).join(" ")}`

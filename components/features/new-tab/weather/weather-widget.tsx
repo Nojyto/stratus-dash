@@ -1,6 +1,5 @@
 "use client"
 
-import { type WeatherData } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
@@ -12,6 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import type { WeatherData } from "@/types/new-tab"
 import { Droplet, MapPin, Navigation } from "lucide-react"
 import { WeatherIcon } from "./weather-icon"
 

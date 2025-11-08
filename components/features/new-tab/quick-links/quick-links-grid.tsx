@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  createQuickLink,
-  updateLinkOrder,
-  type FormState,
-  type QuickLink,
-} from "@/app/new-tab/actions"
+import { createQuickLink, updateLinkOrder } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import type { FormState, QuickLink } from "@/types/new-tab"
 import {
   DndContext,
   KeyboardSensor,

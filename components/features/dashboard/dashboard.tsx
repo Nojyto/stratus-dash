@@ -1,6 +1,6 @@
 "use client"
 
-import type { Folder, Note } from "@/app/dashboard/actions"
+import type { Folder, Note } from "@/types/dashboard"
 import { useState } from "react"
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels"
 import { FileExplorer } from "./file-explorer"

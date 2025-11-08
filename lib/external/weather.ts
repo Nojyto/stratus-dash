@@ -1,6 +1,6 @@
 "use server"
 
-import type { WeatherData } from "@/app/new-tab/actions"
+import type { WeatherData } from "@/types/new-tab"
 import { unstable_cache as cache } from "next/cache"
 
 type OpenWeatherForecastItem = {

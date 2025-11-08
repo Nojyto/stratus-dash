@@ -1,6 +1,6 @@
 "use client"
 
-import { updateNote, type Note } from "@/app/dashboard/actions"
+import { updateNote } from "@/app/dashboard/actions"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
 import { useDebounce } from "@/hooks/use-debounce"
+import type { Note } from "@/types/dashboard"
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown"
 import { languages } from "@codemirror/language-data"
 import { GFM } from "@lezer/markdown"

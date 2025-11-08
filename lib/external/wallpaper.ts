@@ -1,6 +1,6 @@
 "use server"
 
-import type { WallpaperInfo } from "@/app/new-tab/actions"
+import type { WallpaperInfo } from "@/types/new-tab"
 import { unstable_cache as cache } from "next/cache"
 import { createApi } from "unsplash-js"
 

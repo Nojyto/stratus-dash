@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  deleteQuickLink,
-  updateQuickLink,
-  type FormState,
-  type QuickLink,
-} from "@/app/new-tab/actions"
+import { deleteQuickLink, updateQuickLink } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,6 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import type { FormState, QuickLink } from "@/types/new-tab"
 import { Edit, Trash2 } from "lucide-react"
 import { useEffect, useState, useTransition } from "react"
 import { useFormState, useFormStatus } from "react-dom"

@@ -1,6 +1,6 @@
 "use client"
 
-import type { QuickLink } from "@/app/new-tab/actions"
+import type { QuickLink } from "@/types/new-tab"
 import { cn } from "@/lib/utils"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"

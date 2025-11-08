@@ -7,8 +7,6 @@ import {
   deleteNote,
   updateFolder,
   updateNote,
-  type Folder,
-  type Note,
 } from "@/app/dashboard/actions"
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +17,7 @@ import {
 } from "@/components/ui/context-menu"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import type { Folder, Note } from "@/types/dashboard"
 import {
   ChevronRight,
   Edit,

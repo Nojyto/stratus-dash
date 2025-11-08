@@ -1,17 +1,17 @@
 "use client"
 
-import {
-  type QuickLink,
-  type UserSettings,
-  type WallpaperInfo,
-  type WeatherData,
-} from "@/app/new-tab/actions"
 import { ClientOnly } from "@/components/common/client-only"
 import { CustomThemeEditor } from "@/components/common/custom-theme-editor"
 import { ThemeSwitcher } from "@/components/common/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import type {
+  QuickLink,
+  UserSettings,
+  WallpaperInfo,
+  WeatherData,
+} from "@/types/new-tab"
 import { Edit } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"

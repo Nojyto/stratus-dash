@@ -1,6 +1,6 @@
 "use client"
 
-import { updateNewTabSettings, type UserSettings } from "@/app/new-tab/actions"
+import { updateNewTabSettings } from "@/app/new-tab/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
 import { applyCustomTheme, getSavedTheme } from "@/lib/theme-utils"
+import type { UserSettings } from "@/types/new-tab"
 import { Settings } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
