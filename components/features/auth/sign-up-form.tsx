@@ -1,7 +1,7 @@
 "use client"
 
 import { signup } from "@/app/auth/actions"
-import { Button } from "@/components/ui/button"
+import { SubmitButton } from "@/components/common/submit-button"
 import {
   Card,
   CardContent,
@@ -14,16 +14,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
 import Link from "next/link"
-import { useFormState, useFormStatus } from "react-dom"
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Creating an account..." : "Sign up"}
-    </Button>
-  )
-}
+import { useFormState } from "react-dom"
 
 export function SignUpForm({
   className,
@@ -74,7 +65,12 @@ export function SignUpForm({
               {state?.error && (
                 <p className="text-sm text-red-500">{state.error}</p>
               )}
-              <SubmitButton />
+              <SubmitButton
+                pendingText="Creating an account..."
+                className="w-full"
+              >
+                Sign up
+              </SubmitButton>
             </div>
             <div className="mt-4 text-center text-sm">
               Already have an account?{" "}

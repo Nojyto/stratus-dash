@@ -1,7 +1,7 @@
 "use client"
 
 import { login } from "@/app/auth/actions"
-import { Button } from "@/components/ui/button"
+import { SubmitButton } from "@/components/common/submit-button"
 import {
   Card,
   CardContent,
@@ -14,16 +14,7 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
 import Link from "next/link"
-import { useFormState, useFormStatus } from "react-dom"
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Logging in..." : "Login"}
-    </Button>
-  )
-}
+import { useFormState } from "react-dom"
 
 export function LoginForm({
   className,
@@ -71,7 +62,9 @@ export function LoginForm({
               {state?.error && (
                 <p className="text-sm text-red-500">{state.error}</p>
               )}
-              <SubmitButton />
+              <SubmitButton pendingText="Logging in..." className="w-full">
+                Login
+              </SubmitButton>
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}

@@ -1,14 +1,11 @@
+import { absoluteUrl } from "@/lib/config"
 import type { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 import { Geist } from "next/font/google"
 import "./globals.css"
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000"
-
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: new URL(absoluteUrl("/")),
   title: "Stratus Dash",
   description: "A personal productivity dashboard",
 }

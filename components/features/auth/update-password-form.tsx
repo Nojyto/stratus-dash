@@ -1,7 +1,7 @@
 "use client"
 
 import { updatePassword } from "@/app/auth/actions"
-import { Button } from "@/components/ui/button"
+import { SubmitButton } from "@/components/common/submit-button"
 import {
   Card,
   CardContent,
@@ -13,16 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
-import { useFormState, useFormStatus } from "react-dom"
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Saving..." : "Save new password"}
-    </Button>
-  )
-}
+import { useFormState } from "react-dom"
 
 export function UpdatePasswordForm({
   className,
@@ -58,7 +49,9 @@ export function UpdatePasswordForm({
               {state?.error && (
                 <p className="text-sm text-red-500">{state.error}</p>
               )}
-              <SubmitButton />
+              <SubmitButton pendingText="Saving..." className="w-full">
+                Save new password
+              </SubmitButton>
             </div>
           </form>
         </CardContent>

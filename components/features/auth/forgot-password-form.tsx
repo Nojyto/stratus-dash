@@ -1,7 +1,7 @@
 "use client"
 
 import { forgotPassword } from "@/app/auth/actions"
-import { Button } from "@/components/ui/button"
+import { SubmitButton } from "@/components/common/submit-button"
 import {
   Card,
   CardContent,
@@ -15,16 +15,7 @@ import { cn } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { useFormState, useFormStatus } from "react-dom"
-
-function SubmitButton() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending ? "Sending..." : "Send reset email"}
-    </Button>
-  )
-}
+import { useFormState } from "react-dom"
 
 export function ForgotPasswordForm({
   className,
@@ -82,7 +73,9 @@ export function ForgotPasswordForm({
                 {state?.error && (
                   <p className="text-sm text-red-500">{state.error}</p>
                 )}
-                <SubmitButton />
+                <SubmitButton pendingText="Sending..." className="w-full">
+                  Send reset email
+                </SubmitButton>
               </div>
               <div className="mt-4 text-center text-sm">
                 Already have an account?{" "}

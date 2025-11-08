@@ -1,6 +1,7 @@
 "use client"
 
 import { createQuickLink, updateLinkOrder } from "@/app/new-tab/actions"
+import { SubmitButton } from "@/components/common/submit-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,17 +26,8 @@ import {
 } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
 import { useEffect, useRef, useState, useTransition } from "react"
-import { useFormState, useFormStatus } from "react-dom"
+import { useFormState } from "react-dom"
 import { QuickLinkItem } from "./quick-link-item"
-
-function AddLinkButton() {
-  const { pending } = useFormStatus()
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? "Adding..." : "Add Link"}
-    </Button>
-  )
-}
 
 type QuickLinksGridProps = {
   initialLinks: QuickLink[]
@@ -50,6 +42,7 @@ export function QuickLinksGrid({
   const [links, setLinks] = useState(initialLinks)
   const [, startTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
   const [state, formAction] = useFormState<FormState | null, FormData>(
     createQuickLink,
@@ -63,6 +56,7 @@ export function QuickLinksGrid({
   useEffect(() => {
     if (state?.success) {
       setPopoverOpen(false)
+      formRef.current?.reset()
     }
   }, [state])
 
@@ -145,7 +139,7 @@ export function QuickLinksGrid({
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-80">
-                <form action={formAction} className="grid gap-4">
+                <form ref={formRef} action={formAction} className="grid gap-4">
                   <div className="space-y-2">
                     <h4 className="font-medium leading-none">Add new link</h4>
                   </div>
@@ -171,7 +165,7 @@ export function QuickLinksGrid({
                   {state?.error && (
                     <p className="text-sm text-red-500">{state.error}</p>
                   )}
-                  <AddLinkButton />
+                  <SubmitButton pendingText="Adding...">Add Link</SubmitButton>
                 </form>
               </PopoverContent>
             </Popover>

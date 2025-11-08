@@ -1,5 +1,6 @@
 "use server"
 
+import { absoluteUrl } from "@/lib/config"
 import { createClient } from "@/lib/supabase/server"
 import { FormState } from "@/types/new-tab"
 import { redirect } from "next/navigation"
@@ -51,7 +52,7 @@ export async function signup(
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/confirm?next=/protected`,
+      emailRedirectTo: absoluteUrl("/auth/confirm?next=/protected"),
     },
   })
 
@@ -74,7 +75,7 @@ export async function forgotPassword(
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/confirm?next=/auth/update-password`,
+    redirectTo: absoluteUrl("/auth/confirm?next=/auth/update-password"),
   })
 
   if (error) {

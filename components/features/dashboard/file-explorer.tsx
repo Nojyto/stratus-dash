@@ -46,6 +46,128 @@ type TreeItem = (Folder & { is_folder: true }) | (Note & { is_folder: false })
 
 const MAX_FOLDER_DEPTH = 5
 
+type FileExplorerItemProps = {
+  item: TreeItem
+  isSelected: boolean
+  isExpanded: boolean
+  onToggleFolder: (folderId: string) => void
+  onSelectNote: (note: Note) => void
+  onRename: (item: TreeItem, newName: string) => Promise<void>
+  onDelete: (item: TreeItem) => Promise<void>
+  children: React.ReactNode
+}
+
+function FileExplorerItem({
+  item,
+  isSelected,
+  isExpanded,
+  onToggleFolder,
+  onSelectNote,
+  onRename,
+  onDelete,
+  children,
+}: FileExplorerItemProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [newName, setNewName] = useState(
+    item.is_folder ? item.name : item.title
+  )
+
+  const title = item.is_folder ? item.name : item.title
+
+  const handleRename = () => {
+    setIsEditing(true)
+    setNewName(title)
+  }
+
+  const handleSaveRename = async () => {
+    if (newName.trim() === "" || newName === title) {
+      setIsEditing(false)
+      return
+    }
+    await onRename(item, newName)
+    setIsEditing(false)
+  }
+
+  const handleClick = () => {
+    if (item.is_folder) {
+      onToggleFolder(item.id)
+    } else {
+      onSelectNote(item)
+    }
+  }
+
+  return (
+    <div className="ml-4">
+      <div
+        className={cn(
+          "group relative flex cursor-pointer items-center justify-between rounded p-1",
+          isSelected && "bg-accent"
+        )}
+        onClick={handleClick}
+      >
+        {isEditing ? (
+          <Input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onBlur={handleSaveRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSaveRename()
+              if (e.key === "Escape") setIsEditing(false)
+            }}
+            onClick={(e) => e.stopPropagation()}
+            autoFocus
+            className="h-7"
+          />
+        ) : (
+          <div className="flex items-center gap-2 truncate">
+            {item.is_folder ? (
+              <>
+                <ChevronRight
+                  size={16}
+                  className={cn(
+                    "flex-shrink-0 transition-transform",
+                    isExpanded && "rotate-90"
+                  )}
+                />
+                <FolderIcon size={16} className="flex-shrink-0" />
+              </>
+            ) : (
+              <File size={16} className="ml-4 flex-shrink-0" />
+            )}
+            <span className="truncate">{title}</span>
+          </div>
+        )}
+        <div className="absolute right-0 top-1/2 flex -translate-y-1/2 bg-background opacity-0 group-hover:opacity-100">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleRename()
+            }}
+          >
+            <Edit size={14} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(item)
+            }}
+          >
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      </div>
+      {item.is_folder && isExpanded && children}
+    </div>
+  )
+}
+
 export function FileExplorer({
   notes,
   folders,
@@ -55,8 +177,6 @@ export function FileExplorer({
   setFoldersAction,
   onLayoutChangeAction,
 }: FileExplorerProps) {
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [newName, setNewName] = useState("")
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
 
   const handleCreate = async (isFolder: boolean) => {
@@ -105,17 +225,7 @@ export function FileExplorer({
     }
   }
 
-  const handleRename = (item: TreeItem) => {
-    setEditingId(item.id)
-    setNewName(item.is_folder ? item.name : item.title)
-  }
-
-  const handleSaveRename = async (item: TreeItem) => {
-    if (newName.trim() === "") {
-      setEditingId(null)
-      return
-    }
-
+  const handleRename = async (item: TreeItem, newName: string) => {
     if (item.is_folder) {
       const updated = await updateFolder(item.id, { name: newName })
       if (updated) {
@@ -131,7 +241,6 @@ export function FileExplorer({
         )
       }
     }
-    setEditingId(null)
   }
 
   const toggleFolder = (folderId: string) => {
@@ -172,86 +281,20 @@ export function FileExplorer({
         const nameB = b.is_folder ? b.name : b.title
         return nameA.localeCompare(nameB)
       })
-      .map((item) => {
-        const isExpanded = item.is_folder && expandedFolders.has(item.id)
-        const title = item.is_folder ? item.name : item.title
-
-        return (
-          <div key={item.id} className="ml-4">
-            <div
-              className={cn(
-                "group relative flex cursor-pointer items-center justify-between rounded p-1",
-                !item.is_folder && selectedNote?.id === item.id && "bg-accent"
-              )}
-              onClick={() => {
-                if (item.is_folder) {
-                  toggleFolder(item.id)
-                } else {
-                  onSelectNoteAction(item)
-                }
-              }}
-            >
-              {editingId === item.id ? (
-                <Input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onBlur={() => handleSaveRename(item)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveRename(item)
-                    if (e.key === "Escape") setEditingId(null)
-                  }}
-                  autoFocus
-                  className="h-7"
-                />
-              ) : (
-                <div className="flex items-center gap-2 truncate">
-                  {item.is_folder ? (
-                    <>
-                      <ChevronRight
-                        size={16}
-                        className={cn(
-                          "flex-shrink-0 transition-transform",
-                          isExpanded && "rotate-90"
-                        )}
-                      />
-                      <FolderIcon size={16} className="flex-shrink-0" />
-                    </>
-                  ) : (
-                    <File size={16} className="ml-4 flex-shrink-0" />
-                  )}
-                  <span className="truncate">{title}</span>
-                </div>
-              )}
-              <div className="absolute right-0 top-1/2 flex -translate-y-1/2 bg-background opacity-0 group-hover:opacity-100">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRename(item)
-                  }}
-                >
-                  <Edit size={14} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete(item)
-                  }}
-                >
-                  <Trash2 size={14} />
-                </Button>
-              </div>
-            </div>
-            {item.is_folder && isExpanded && renderTree(item.id, depth + 1)}
-          </div>
-        )
-      })
+      .map((item) => (
+        <FileExplorerItem
+          key={item.id}
+          item={item}
+          isSelected={!item.is_folder && selectedNote?.id === item.id}
+          isExpanded={item.is_folder && expandedFolders.has(item.id)}
+          onToggleFolder={toggleFolder}
+          onSelectNote={onSelectNoteAction}
+          onRename={handleRename}
+          onDelete={handleDelete}
+        >
+          {item.is_folder ? renderTree(item.id, depth + 1) : null}
+        </FileExplorerItem>
+      ))
   }
 
   return (
