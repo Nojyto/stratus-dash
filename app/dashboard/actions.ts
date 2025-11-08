@@ -1,35 +1,32 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
 import { getSupabaseWithUser } from "@/lib/supabase/utils"
 import type { DashboardItems, Folder, Note } from "@/types/dashboard"
 import { revalidatePath } from "next/cache"
 
 export async function getDashboardItems(): Promise<DashboardItems> {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const { supabase, user } = await getSupabaseWithUser()
 
-  if (!user) {
+    const [notesResult, foldersResult] = await Promise.all([
+      supabase.from("notes").select().eq("user_id", user.id),
+      supabase.from("folders").select().eq("user_id", user.id),
+    ])
+
+    if (notesResult.error) {
+      console.error("Error fetching notes:", notesResult.error)
+    }
+    if (foldersResult.error) {
+      console.error("Error fetching folders:", foldersResult.error)
+    }
+
+    return {
+      notes: (notesResult.data as Note[]) ?? [],
+      folders: (foldersResult.data as Folder[]) ?? [],
+    }
+  } catch (error) {
+    console.error("Error in getDashboardItems:", error)
     return { notes: [], folders: [] }
-  }
-
-  const [notesResult, foldersResult] = await Promise.all([
-    supabase.from("notes").select().eq("user_id", user.id),
-    supabase.from("folders").select().eq("user_id", user.id),
-  ])
-
-  if (notesResult.error) {
-    console.error("Error fetching notes:", notesResult.error)
-  }
-  if (foldersResult.error) {
-    console.error("Error fetching folders:", foldersResult.error)
-  }
-
-  return {
-    notes: (notesResult.data as Note[]) ?? [],
-    folders: (foldersResult.data as Folder[]) ?? [],
   }
 }
 

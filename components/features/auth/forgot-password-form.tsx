@@ -14,14 +14,13 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
 import Link from "next/link"
-import { useEffect, useState } from "react"
-import { useFormState } from "react-dom"
+import { useActionState, useEffect, useState } from "react"
 
 export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [state, formAction] = useFormState<FormState | null, FormData>(
+  const [state, formAction] = useActionState<FormState | null, FormData>(
     forgotPassword,
     null
   )

@@ -1,6 +1,9 @@
 "use client"
 
-import { deleteQuickLink, updateQuickLink } from "@/app/new-tab/actions"
+import {
+  deleteQuickLink,
+  updateQuickLink,
+} from "@/app/new-tab/actions/quick-links"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,8 +14,8 @@ import {
 } from "@/components/ui/popover"
 import type { FormState, QuickLink } from "@/types/new-tab"
 import { Edit, Trash2 } from "lucide-react"
-import { useEffect, useState, useTransition } from "react"
-import { useFormState, useFormStatus } from "react-dom"
+import { useActionState, useEffect, useState, useTransition } from "react"
+import { useFormStatus } from "react-dom"
 
 function EditFormButtons({
   onDelete,
@@ -53,7 +56,7 @@ export function EditLinkPopover({
   const [isDeletePending, startDeleteTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
 
-  const [state, formAction] = useFormState<FormState | null, FormData>(
+  const [state, formAction] = useActionState<FormState | null, FormData>(
     updateQuickLink,
     null
   )

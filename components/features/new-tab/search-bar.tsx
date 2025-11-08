@@ -1,6 +1,6 @@
 "use client"
 
-import { updateSearchEngine } from "@/app/new-tab/actions"
+import { updateSearchEngine } from "@/app/new-tab/actions/settings"
 import { Button } from "@/components/ui/button"
 import {
   ContextMenu,

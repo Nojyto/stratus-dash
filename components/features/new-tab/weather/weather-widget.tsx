@@ -44,7 +44,7 @@ export function WeatherWidget({
                 <WeatherIcon
                   iconCode={current.icon}
                   description={current.description}
-                  size={10}
+                  size={28}
                 />
               </div>
               <div className="flex flex-col">

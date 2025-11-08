@@ -4,7 +4,7 @@ import {
   lockWallpaper,
   refreshWallpaper,
   unlockWallpaper,
-} from "@/app/new-tab/actions"
+} from "@/app/new-tab/actions/wallpaper"
 import { Button } from "@/components/ui/button"
 import type { WallpaperInfo } from "@/types/new-tab"
 import { Lock, Shuffle, Unlock } from "lucide-react"

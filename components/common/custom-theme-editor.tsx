@@ -1,6 +1,6 @@
 "use client"
 
-import { updateNewTabSettings } from "@/app/new-tab/actions"
+import { updateNewTabSettings } from "@/app/new-tab/actions/settings"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {

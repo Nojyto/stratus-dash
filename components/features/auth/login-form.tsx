@@ -14,13 +14,13 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
 import Link from "next/link"
-import { useFormState } from "react-dom"
+import { useActionState } from "react"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [state, formAction] = useFormState<FormState | null, FormData>(
+  const [state, formAction] = useActionState<FormState | null, FormData>(
     login,
     null
   )

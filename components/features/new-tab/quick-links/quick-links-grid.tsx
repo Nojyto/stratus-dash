@@ -1,6 +1,9 @@
 "use client"
 
-import { createQuickLink, updateLinkOrder } from "@/app/new-tab/actions"
+import {
+  createQuickLink,
+  updateLinkOrder,
+} from "@/app/new-tab/actions/quick-links"
 import { SubmitButton } from "@/components/common/submit-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,8 +28,13 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
-import { useEffect, useRef, useState, useTransition } from "react"
-import { useFormState } from "react-dom"
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react"
 import { QuickLinkItem } from "./quick-link-item"
 
 type QuickLinksGridProps = {
@@ -44,7 +52,7 @@ export function QuickLinksGrid({
   const [popoverOpen, setPopoverOpen] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
-  const [state, formAction] = useFormState<FormState | null, FormData>(
+  const [state, formAction] = useActionState<FormState | null, FormData>(
     createQuickLink,
     null
   )

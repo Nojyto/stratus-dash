@@ -1,6 +1,6 @@
 import { AuthButton } from "@/components/common/auth-button"
 import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
-import { getNewTabItems } from "./actions"
+import { getNewTabItems } from "./actions/data"
 
 export default async function NewTabPage() {
   const { links, settings, wallpaper, weather } = await getNewTabItems()
