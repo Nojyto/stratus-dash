@@ -91,6 +91,11 @@
     background-size: cover;
     background-position: center;
     filter: brightness(0.85);
+    opacity: 0;
+    transition: opacity 500ms ease-in-out;
+  }
+  body.bg-image-loaded::before {
+    opacity: 1;
   }
   .dark body.bg-image-active::before {
     filter: brightness(0.8);

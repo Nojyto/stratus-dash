@@ -16,6 +16,7 @@ import { Edit } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
+import { QuickLinksSkeleton } from "./quick-links/quick-links-skeleton"
 import { SearchBar } from "./search-bar"
 import { BackgroundManager } from "./wallpaper/background-manager"
 import { WallpaperControls } from "./wallpaper/wallpaper-controls"
@@ -54,6 +55,8 @@ export function NewTabContent({
     isSettingsOpen ||
     isCustomThemeEditorOpen
 
+  const skeletonCount = initialLinks.length > 0 ? initialLinks.length : 5
+
   return (
     <TooltipProvider delayDuration={300}>
       <BackgroundManager
@@ -66,7 +69,6 @@ export function NewTabContent({
         <div className="absolute left-6 top-6 text-white">
           <WeatherWidget initialData={initialWeather} />
         </div>
-
         <div
           className={cn(
             "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
@@ -91,19 +93,16 @@ export function NewTabContent({
           <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
           {authButton}
         </div>
-
-        <ClientOnly>
+        <ClientOnly fallback={<QuickLinksSkeleton count={skeletonCount} />}>
           <QuickLinksGrid
             initialLinks={initialLinks}
             isEditing={isEditing}
             userId={initialSettings.user_id}
           />
-
-          <SearchBar
-            initialEngine={initialSettings.default_search_engine ?? "google"}
-          />
         </ClientOnly>
-
+        <SearchBar
+          initialEngine={initialSettings.default_search_engine ?? "google"}
+        />
         {/* Wallpaper Controls */}
         <div
           className={cn(

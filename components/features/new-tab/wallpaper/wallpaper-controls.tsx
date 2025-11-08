@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button"
 import type { WallpaperInfo } from "@/types/new-tab"
 import { Lock, Shuffle, Unlock } from "lucide-react"
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 
 type WallpaperControlsProps = {
   initialWallpaper: WallpaperInfo
@@ -25,6 +25,11 @@ export function WallpaperControls({
   const [isLocked, setIsLocked] = useState(initialWallpaper.isLocked)
   const [wallpaperQuery] = useState(initialWallpaperQuery)
   const [isWallpaperPending, startWallpaperTransition] = useTransition()
+
+  useEffect(() => {
+    setWallpaper(initialWallpaper)
+    setIsLocked(initialWallpaper.isLocked)
+  }, [initialWallpaper])
 
   const handleRandomizeWallpaper = () => {
     startWallpaperTransition(async () => {

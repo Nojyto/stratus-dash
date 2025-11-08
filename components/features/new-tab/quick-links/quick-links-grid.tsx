@@ -141,9 +141,6 @@ export function QuickLinksGrid({
                   >
                     <Plus className="h-9 w-9 text-muted-foreground" />
                   </Button>
-                  <span className="w-full text-center text-xs text-muted-foreground">
-                    Add Link
-                  </span>
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-80">

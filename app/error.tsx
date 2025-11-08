@@ -35,7 +35,7 @@ export default function Error({
           <div className="space-y-2">
             <p className="text-sm font-medium">Error Details:</p>
             <pre className="rounded-md bg-secondary p-3 text-xs text-secondary-foreground/80">
-              {error.message || "Unknown error"}
+              {error.name}
             </pre>
           </div>
         </CardContent>
