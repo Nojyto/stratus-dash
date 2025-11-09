@@ -7,6 +7,7 @@ type BackgroundManagerProps = {
   wallpaperUrl: string
   gradientFrom: string
   gradientTo: string
+  theme: string | undefined
 }
 
 export function BackgroundManager({
@@ -14,10 +15,14 @@ export function BackgroundManager({
   wallpaperUrl,
   gradientFrom,
   gradientTo,
+  theme,
 }: BackgroundManagerProps) {
   const appliedWallpaperUrl = useRef<string | null>(null)
 
   useEffect(() => {
+    let img: HTMLImageElement | null = null
+    let timer: NodeJS.Timeout | null = null
+
     if (wallpaperMode === "image") {
       document.documentElement.style.removeProperty("--gradient-from")
       document.documentElement.style.removeProperty("--gradient-to")
@@ -28,7 +33,9 @@ export function BackgroundManager({
         return
       }
 
-      const img = new Image()
+      document.body.classList.remove("bg-image-loaded")
+
+      img = new Image()
       img.src = wallpaperUrl
       img.onload = () => {
         appliedWallpaperUrl.current = wallpaperUrl
@@ -38,9 +45,9 @@ export function BackgroundManager({
         )
         document.body.classList.add("bg-image-active")
 
-        requestAnimationFrame(() => {
+        timer = setTimeout(() => {
           document.body.classList.add("bg-image-loaded")
-        })
+        }, 50)
       }
       img.onerror = () => {
         appliedWallpaperUrl.current = null
@@ -51,14 +58,30 @@ export function BackgroundManager({
       document.documentElement.style.removeProperty("--bg-image")
       document.body.classList.remove("bg-image-active", "bg-image-loaded")
 
-      document.documentElement.style.setProperty(
-        "--gradient-from",
-        gradientFrom
-      )
-      document.documentElement.style.setProperty("--gradient-to", gradientTo)
+      if (theme === "custom") {
+        document.documentElement.style.setProperty(
+          "--gradient-from",
+          gradientFrom
+        )
+        document.documentElement.style.setProperty("--gradient-to", gradientTo)
+      } else {
+        document.documentElement.style.removeProperty("--gradient-from")
+        document.documentElement.style.removeProperty("--gradient-to")
+      }
+
       document.body.classList.add("bg-gradient-active")
     }
-  }, [wallpaperUrl, wallpaperMode, gradientFrom, gradientTo])
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer)
+      }
+      if (img) {
+        img.onload = null
+        img.onerror = null
+      }
+    }
+  }, [wallpaperUrl, wallpaperMode, gradientFrom, gradientTo, theme])
 
   return null
 }

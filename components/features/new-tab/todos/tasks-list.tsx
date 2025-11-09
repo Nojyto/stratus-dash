@@ -49,17 +49,11 @@ import { TaskItem } from "./task-item"
 
 type TasksListProps = {
   initialItems: TaskItemType[]
-  isEditing: boolean
   taskType: "daily" | "general"
   title: string
 }
 
-export function TasksList({
-  initialItems,
-  isEditing,
-  taskType,
-  title,
-}: TasksListProps) {
+export function TasksList({ initialItems, taskType, title }: TasksListProps) {
   const [items, setItems] = useState(initialItems)
   const [, startTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
@@ -70,7 +64,7 @@ export function TasksList({
   const toggleAction =
     taskType === "daily" ? toggleDailyTask : toggleGeneralTodo
   const updateOrderAction =
-    taskType === "daily" ? updateDailyTaskOrder : updateGeneralTodoOrder // ---
+    taskType === "daily" ? updateDailyTaskOrder : updateGeneralTodoOrder
   const [state, formAction] = useActionState<FormState | null, FormData>(
     createAction,
     null
@@ -123,6 +117,12 @@ export function TasksList({
     setItems((prev) => prev.filter((t) => t.id !== id))
   }
 
+  const handleUpdate = (updatedItem: TaskItemType) => {
+    setItems((prev) =>
+      prev.map((t) => (t.id === updatedItem.id ? updatedItem : t))
+    )
+  }
+
   const didDragEnd = useRef(false)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -155,32 +155,14 @@ export function TasksList({
 
   return (
     <div className="flex flex-col">
-      <h3 className="mb-2 font-medium">{title}</h3>
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <SortableContext items={sortedItems.map((t) => t.id)}>
-          <div className="flex flex-col gap-1">
-            {sortedItems.map((item) => (
-              <TaskItem
-                key={item.id}
-                item={item}
-                isEditing={isEditing}
-                taskType={taskType}
-                onToggleAction={handleToggle}
-                onDeleteAction={handleDelete}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
-
-      {isEditing && (
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="font-medium">{title}</h3>
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" className="mt-2 h-8 w-full justify-start">
-              <Plus className="mr-2 h-4 w-4" /> Add task
+            <Button variant="ghost" size="icon" className="h-7 w-7">
+              <Plus className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
-
           <PopoverContent className="w-80">
             <form ref={formRef} action={formAction} className="grid gap-4">
               <div className="space-y-2">
@@ -206,7 +188,30 @@ export function TasksList({
             </form>
           </PopoverContent>
         </Popover>
-      )}
+      </div>
+
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <SortableContext items={sortedItems.map((t) => t.id)}>
+          <div className="flex flex-col gap-1">
+            {sortedItems.length > 0 ? (
+              sortedItems.map((item) => (
+                <TaskItem
+                  key={item.id}
+                  item={item}
+                  taskType={taskType}
+                  onToggleAction={handleToggle}
+                  onDeleteAction={handleDelete}
+                  onUpdateAction={handleUpdate}
+                />
+              ))
+            ) : (
+              <p className="p-2 text-xs text-muted-foreground">
+                No tasks yet. Click the + to add one.
+              </p>
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
   )
 }

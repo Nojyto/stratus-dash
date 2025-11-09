@@ -1,15 +1,12 @@
 "use server"
 
-import { fetchFreshRandomWallpaper } from "@/lib/external/wallpaper"
 import { getSupabaseWithUser } from "@/lib/supabase/utils"
-import type { WallpaperInfo } from "@/types/new-tab"
 import { revalidatePath, revalidateTag } from "next/cache"
 
 export async function refreshWallpaper(
   query: string
-): Promise<Omit<WallpaperInfo, "isLocked">> {
+): Promise<{ success: true }> {
   const { supabase, user } = await getSupabaseWithUser()
-  const newWallpaper = await fetchFreshRandomWallpaper(query)
 
   await supabase.from("user_settings").upsert(
     {
@@ -27,7 +24,7 @@ export async function refreshWallpaper(
   revalidatePath("/new-tab")
   revalidateTag("random-wallpaper-cache")
 
-  return newWallpaper
+  return { success: true }
 }
 
 export async function lockWallpaper(

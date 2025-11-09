@@ -15,6 +15,7 @@ import type {
   WeatherData,
 } from "@/types/new-tab"
 import { Edit } from "lucide-react"
+import { useTheme } from "next-themes"
 import { useState, type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
@@ -49,8 +50,11 @@ export function NewTabContent({
   const [wallpaperMode, setWallpaperMode] = useState(
     initialSettings.wallpaper_mode
   )
+  const [wallpaperQuery, setWallpaperQuery] = useState(
+    initialSettings.wallpaper_query
+  )
+  const { theme } = useTheme()
 
-  // UI visibility state
   const [isHovering, setIsHovering] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -72,6 +76,7 @@ export function NewTabContent({
         wallpaperUrl={initialWallpaper.url}
         gradientFrom={initialSettings.gradient_from ?? "220 70% 50%"}
         gradientTo={initialSettings.gradient_to ?? "280 65% 60%"}
+        theme={theme}
       />
 
       <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6">
@@ -121,12 +126,12 @@ export function NewTabContent({
               initialEngine={initialSettings.default_search_engine ?? "google"}
             />
           </div>
+
           <div className="hidden w-64 xl:block">
             <ClientOnly fallback={<TaskSkeleton />}>
               <TasksWidget
                 initialDailyTasks={initialDailyTasks}
                 initialGeneralTodos={initialGeneralTodos}
-                isEditing={isEditing}
               />
             </ClientOnly>
           </div>
@@ -142,13 +147,15 @@ export function NewTabContent({
         >
           <NewTabSettings
             initialSettings={initialSettings}
+            wallpaperQuery={wallpaperQuery}
+            onWallpaperQueryChangeAction={setWallpaperQuery}
             onWallpaperModeChangeAction={setWallpaperMode}
             onOpenChangeAction={setIsSettingsOpen}
           />
 
           <WallpaperControls
             initialWallpaper={initialWallpaper}
-            initialWallpaperQuery={initialSettings.wallpaper_query}
+            wallpaperQuery={wallpaperQuery}
             wallpaperMode={wallpaperMode}
           />
         </div>

@@ -8,23 +8,24 @@ import {
 import { Button } from "@/components/ui/button"
 import type { WallpaperInfo } from "@/types/new-tab"
 import { Lock, Shuffle, Unlock } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 
 type WallpaperControlsProps = {
   initialWallpaper: WallpaperInfo
-  initialWallpaperQuery: string
+  wallpaperQuery: string
   wallpaperMode: "image" | "gradient"
 }
 
 export function WallpaperControls({
   initialWallpaper,
-  initialWallpaperQuery,
+  wallpaperQuery,
   wallpaperMode,
 }: WallpaperControlsProps) {
   const [wallpaper, setWallpaper] = useState(initialWallpaper)
   const [isLocked, setIsLocked] = useState(initialWallpaper.isLocked)
-  const [wallpaperQuery] = useState(initialWallpaperQuery)
   const [isWallpaperPending, startWallpaperTransition] = useTransition()
+  const router = useRouter()
 
   useEffect(() => {
     setWallpaper(initialWallpaper)
@@ -33,9 +34,8 @@ export function WallpaperControls({
 
   const handleRandomizeWallpaper = () => {
     startWallpaperTransition(async () => {
-      const newWallpaper = await refreshWallpaper(wallpaperQuery)
-      setWallpaper({ ...newWallpaper, isLocked: false })
-      setIsLocked(false)
+      await refreshWallpaper(wallpaperQuery)
+      router.refresh()
     })
   }
 

@@ -24,8 +24,6 @@ async function getNextSortOrder(
   return (data.sort_order ?? 0) + 1
 }
 
-// --- General Todo Actions ---
-
 export async function createGeneralTodo(
   prevState: FormState | null,
   formData: FormData
@@ -72,15 +70,17 @@ export async function updateGeneralTodo(
     return { error: "ID and Task are required" }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("general_todos")
     .update({ task, link: link ? prefixUrl(link) : null })
     .eq("id", id)
+    .select()
+    .single()
 
   if (error) {
     return { error: error.message }
   }
-  return { success: true }
+  return { success: true, data: data }
 }
 
 export async function toggleGeneralTodo(id: string, is_completed: boolean) {
@@ -175,15 +175,17 @@ export async function updateDailyTask(
     return { error: "ID and Task are required" }
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("daily_tasks")
     .update({ task, link: link ? prefixUrl(link) : null })
     .eq("id", id)
+    .select()
+    .single()
 
   if (error) {
     return { error: error.message }
   }
-  return { success: true }
+  return { success: true, data: data }
 }
 
 export async function toggleDailyTask(taskId: string, isCompleted: boolean) {

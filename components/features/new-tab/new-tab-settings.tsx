@@ -10,7 +10,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
-import { applyCustomTheme, getSavedTheme } from "@/lib/theme-utils"
 import type { UserSettings } from "@/types/new-tab"
 import { Settings } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -47,12 +46,16 @@ const LocationPicker = dynamic(
 
 type NewTabSettingsProps = {
   initialSettings: UserSettings
+  wallpaperQuery: string
+  onWallpaperQueryChangeAction: (query: string) => void
   onWallpaperModeChangeAction: (mode: "image" | "gradient") => void
   onOpenChangeAction: (open: boolean) => void
 }
 
 export function NewTabSettings({
   initialSettings,
+  wallpaperQuery,
+  onWallpaperQueryChangeAction,
   onWallpaperModeChangeAction,
   onOpenChangeAction,
 }: NewTabSettingsProps) {
@@ -62,9 +65,6 @@ export function NewTabSettings({
 
   const [wallpaperMode, setWallpaperMode] = useState(
     initialSettings.wallpaper_mode
-  )
-  const [wallpaperQuery, setWallpaperQuery] = useState(
-    initialSettings.wallpaper_query
   )
   const [gradientFrom, setGradientFrom] = useState(
     initialSettings.gradient_from ?? "220 70% 50%"
@@ -90,12 +90,6 @@ export function NewTabSettings({
         weather_lon: lon,
       })
 
-      const themeData = getSavedTheme()
-      themeData.colors["--gradient-from"] = gradientFrom
-      themeData.colors["--gradient-to"] = gradientTo
-      localStorage.setItem("custom-theme", JSON.stringify(themeData))
-      applyCustomTheme(themeData.colors)
-
       router.refresh()
     })
     setIsSettingsOpen(false)
@@ -104,7 +98,7 @@ export function NewTabSettings({
   const handleOpenChange = (open: boolean) => {
     if (!open && !isPending) {
       setWallpaperMode(initialSettings.wallpaper_mode)
-      setWallpaperQuery(initialSettings.wallpaper_query)
+      onWallpaperQueryChangeAction(initialSettings.wallpaper_query)
       setGradientFrom(initialSettings.gradient_from ?? "220 70% 50%")
       setGradientTo(initialSettings.gradient_to ?? "280 65% 60%")
       setLat(initialSettings.weather_lat ?? 51.5072)
@@ -145,7 +139,7 @@ export function NewTabSettings({
                 <Input
                   id="wallpaper-query"
                   value={wallpaperQuery}
-                  onChange={(e) => setWallpaperQuery(e.target.value)}
+                  onChange={(e) => onWallpaperQueryChangeAction(e.target.value)}
                   className="h-8 text-xs"
                 />
               </div>
