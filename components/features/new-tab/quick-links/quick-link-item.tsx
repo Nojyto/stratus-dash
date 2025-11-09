@@ -1,7 +1,7 @@
 "use client"
 
+import { cn, getHostname } from "@/lib/utils"
 import type { QuickLink } from "@/types/new-tab"
-import { cn } from "@/lib/utils"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import Image from "next/image"
@@ -40,19 +40,7 @@ export function QuickLinkItem({
 
   const displayTitle = link.title || null
   const Comp = isEditing ? "div" : "a"
-
-  const getHostname = () => {
-    try {
-      const fullUrl =
-        link.url.startsWith("http://") || link.url.startsWith("https://")
-          ? link.url
-          : `https://${link.url}`
-      return new URL(fullUrl).hostname
-    } catch {
-      return "duckduckgo.com"
-    }
-  }
-  const hostname = getHostname()
+  const hostname = getHostname(link.url)
 
   return (
     <div

@@ -11,3 +11,15 @@ export function prefixUrl(url: string): string {
   }
   return `https://${url}`
 }
+
+export function getHostname(url: string): string {
+  try {
+    const fullUrl =
+      url.startsWith("http://") || url.startsWith("https://")
+        ? url
+        : `https://${url}`
+    return new URL(fullUrl).hostname
+  } catch {
+    return "duckduckgo.com"
+  }
+}

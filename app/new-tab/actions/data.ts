@@ -4,6 +4,9 @@ import { getCachedRandomWallpaper } from "@/lib/external/wallpaper"
 import { getWeatherForCoords } from "@/lib/external/weather"
 import { createClient } from "@/lib/supabase/server"
 import type {
+  DailyTask,
+  DailyTaskWithCompletion,
+  GeneralTodo,
   NewTabItems,
   QuickLink,
   UserSettings,
@@ -115,25 +118,43 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     redirect("/auth/login")
   }
 
-  const [linksResult, settingsResult] = await Promise.all([
-    supabase
-      .from("quick_links")
-      .select("id, title, url, user_id, sort_order")
-      .eq("user_id", user.id)
-      .order("sort_order"),
-    supabase
-      .from("user_settings")
-      .select(
-        "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon"
-      )
-      .eq("user_id", user.id)
-      .maybeSingle(),
-  ])
+  const today = new Date().toISOString().split("T")[0]
+
+  const [linksResult, settingsResult, generalTodosResult, dailyTasksResult] =
+    await Promise.all([
+      supabase
+        .from("quick_links")
+        .select("id, title, url, user_id, sort_order")
+        .eq("user_id", user.id)
+        .order("sort_order"),
+      supabase
+        .from("user_settings")
+        .select(
+          "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon"
+        )
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("general_todos")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("sort_order"),
+      supabase
+        .from("daily_tasks")
+        .select("*, daily_task_completions!left(id, completed_date)")
+        .eq("user_id", user.id)
+        .eq("daily_task_completions.completed_date", today)
+        .order("sort_order"),
+    ])
 
   if (linksResult.error)
     console.error("Error fetching links:", linksResult.error)
   if (settingsResult.error)
     console.error("Error fetching settings:", settingsResult.error)
+  if (generalTodosResult.error)
+    console.error("Error fetching general todos:", generalTodosResult.error)
+  if (dailyTasksResult.error)
+    console.error("Error fetching daily tasks:", dailyTasksResult.error)
 
   const settings = _formatUserSettings(settingsResult.data, user.id)
   const [wallpaper, weather] = await Promise.all([
@@ -141,10 +162,19 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     _getWeatherData(settings),
   ])
 
+  const dailyTasks: DailyTaskWithCompletion[] = (
+    dailyTasksResult.data || []
+  ).map((task: DailyTask & { daily_task_completions: unknown[] }) => ({
+    ...task,
+    is_completed_today: task.daily_task_completions.length > 0,
+  }))
+
   return {
     links: (linksResult.data as QuickLink[]) ?? [],
     settings,
     wallpaper,
     weather,
+    generalTodos: (generalTodosResult.data as GeneralTodo[]) ?? [],
+    dailyTasks: dailyTasks,
   }
 }

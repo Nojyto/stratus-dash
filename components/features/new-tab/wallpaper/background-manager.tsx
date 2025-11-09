@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 type BackgroundManagerProps = {
   wallpaperMode: "image" | "gradient"
@@ -15,14 +15,23 @@ export function BackgroundManager({
   gradientFrom,
   gradientTo,
 }: BackgroundManagerProps) {
-  useEffect(() => {
-    document.documentElement.style.setProperty("--gradient-from", gradientFrom)
-    document.documentElement.style.setProperty("--gradient-to", gradientTo)
+  const appliedWallpaperUrl = useRef<string | null>(null)
 
+  useEffect(() => {
     if (wallpaperMode === "image") {
+      document.documentElement.style.removeProperty("--gradient-from")
+      document.documentElement.style.removeProperty("--gradient-to")
+      document.body.classList.remove("bg-gradient-active")
+
+      if (wallpaperUrl === appliedWallpaperUrl.current) {
+        document.body.classList.add("bg-image-active", "bg-image-loaded")
+        return
+      }
+
       const img = new Image()
       img.src = wallpaperUrl
       img.onload = () => {
+        appliedWallpaperUrl.current = wallpaperUrl
         document.documentElement.style.setProperty(
           "--bg-image",
           `url(${wallpaperUrl})`
@@ -34,17 +43,20 @@ export function BackgroundManager({
         })
       }
       img.onerror = () => {
+        appliedWallpaperUrl.current = null
         document.body.classList.remove("bg-image-active", "bg-image-loaded")
       }
-    }
-
-    return () => {
+    } else if (wallpaperMode === "gradient") {
+      appliedWallpaperUrl.current = null
       document.documentElement.style.removeProperty("--bg-image")
-      document.body.classList.remove(
-        "bg-image-active",
-        "bg-image-loaded",
-        "bg-gradient-active"
+      document.body.classList.remove("bg-image-active", "bg-image-loaded")
+
+      document.documentElement.style.setProperty(
+        "--gradient-from",
+        gradientFrom
       )
+      document.documentElement.style.setProperty("--gradient-to", gradientTo)
+      document.body.classList.add("bg-gradient-active")
     }
   }, [wallpaperUrl, wallpaperMode, gradientFrom, gradientTo])
 

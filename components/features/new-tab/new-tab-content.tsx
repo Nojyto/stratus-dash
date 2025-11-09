@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import type {
+  DailyTaskWithCompletion,
+  GeneralTodo,
   QuickLink,
   UserSettings,
   WallpaperInfo,
@@ -18,6 +20,8 @@ import { NewTabSettings } from "./new-tab-settings"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { QuickLinksSkeleton } from "./quick-links/quick-links-skeleton"
 import { SearchBar } from "./search-bar"
+import { TaskSkeleton } from "./todos/task-skeleton"
+import { TasksWidget } from "./todos/tasks-widget"
 import { BackgroundManager } from "./wallpaper/background-manager"
 import { WallpaperControls } from "./wallpaper/wallpaper-controls"
 import { WeatherWidget } from "./weather/weather-widget"
@@ -27,6 +31,8 @@ type NewTabContentProps = {
   initialSettings: UserSettings
   initialWallpaper: WallpaperInfo
   initialWeather: WeatherData | null
+  initialGeneralTodos: GeneralTodo[]
+  initialDailyTasks: DailyTaskWithCompletion[]
   authButton: ReactNode
 }
 
@@ -36,6 +42,8 @@ export function NewTabContent({
   initialWallpaper,
   authButton,
   initialWeather,
+  initialGeneralTodos,
+  initialDailyTasks,
 }: NewTabContentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [wallpaperMode, setWallpaperMode] = useState(
@@ -65,10 +73,12 @@ export function NewTabContent({
         gradientFrom={initialSettings.gradient_from ?? "220 70% 50%"}
         gradientTo={initialSettings.gradient_to ?? "280 65% 60%"}
       />
-      <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6 pt-32">
+
+      <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6">
         <div className="absolute left-6 top-6 text-white">
           <WeatherWidget initialData={initialWeather} />
         </div>
+
         <div
           className={cn(
             "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
@@ -85,6 +95,7 @@ export function NewTabContent({
           >
             <Edit className="h-4 w-4" />
           </Button>
+
           <CustomThemeEditor
             onOpenChangeAction={setIsCustomThemeEditorOpen}
             initialGradientFrom={initialSettings.gradient_from}
@@ -93,16 +104,33 @@ export function NewTabContent({
           <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
           {authButton}
         </div>
-        <ClientOnly fallback={<QuickLinksSkeleton count={skeletonCount} />}>
-          <QuickLinksGrid
-            initialLinks={initialLinks}
-            isEditing={isEditing}
-            userId={initialSettings.user_id}
-          />
-        </ClientOnly>
-        <SearchBar
-          initialEngine={initialSettings.default_search_engine ?? "google"}
-        />
+
+        <div className="flex w-full max-w-7xl flex-1 items-start justify-center gap-8 pt-32 xl:justify-between">
+          {/* This is the empty left slot. */}
+          <div className="hidden w-64 xl:block"></div>
+          <div className="flex w-full max-w-lg flex-col items-center gap-12">
+            <ClientOnly fallback={<QuickLinksSkeleton count={skeletonCount} />}>
+              <QuickLinksGrid
+                initialLinks={initialLinks}
+                isEditing={isEditing}
+                userId={initialSettings.user_id}
+              />
+            </ClientOnly>
+
+            <SearchBar
+              initialEngine={initialSettings.default_search_engine ?? "google"}
+            />
+          </div>
+          <div className="hidden w-64 xl:block">
+            <ClientOnly fallback={<TaskSkeleton />}>
+              <TasksWidget
+                initialDailyTasks={initialDailyTasks}
+                initialGeneralTodos={initialGeneralTodos}
+                isEditing={isEditing}
+              />
+            </ClientOnly>
+          </div>
+        </div>
         {/* Wallpaper Controls */}
         <div
           className={cn(

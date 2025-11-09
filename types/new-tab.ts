@@ -2,6 +2,7 @@ export type FormState = {
   error?: string
   success?: boolean
   message?: string
+  data?: GeneralTodo | DailyTask
 }
 
 export type QuickLink = {
@@ -59,4 +60,37 @@ export type NewTabItems = {
   settings: UserSettings
   wallpaper: WallpaperInfo
   weather: WeatherData | null
+  generalTodos: GeneralTodo[]
+  dailyTasks: DailyTaskWithCompletion[]
+}
+
+export type GeneralTodo = {
+  id: string
+  user_id: string
+  task: string
+  link: string | null
+  is_completed: boolean
+  sort_order: number
+  created_at: string
+}
+
+export type DailyTask = {
+  id: string
+  user_id: string
+  task: string
+  link: string | null
+  sort_order: number
+  created_at: string
+}
+
+export type DailyTaskWithCompletion = DailyTask & {
+  is_completed_today: boolean
+}
+
+export type TaskItemType = {
+  id: string
+  task: string
+  link: string | null
+  is_completed: boolean
+  sort_order: number
 }

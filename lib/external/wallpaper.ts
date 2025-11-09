@@ -6,7 +6,7 @@ import { createApi } from "unsplash-js"
 
 const FALLBACK_WALLPAPER_URL = "/default-wallpaper.jpg"
 const FALLBACK_ARTIST = "Local Image"
-const FALLBACK_ARTIST_URL = "#"
+const FALLBACK_URL = "https://unsplash.com/"
 
 const unsplash = createApi({
   accessKey: process.env.UNSPLASH_ACCESS_KEY!,
@@ -22,7 +22,7 @@ export async function fetchFreshRandomWallpaper(
     return {
       url: FALLBACK_WALLPAPER_URL,
       artist: FALLBACK_ARTIST,
-      photoUrl: FALLBACK_ARTIST_URL,
+      photoUrl: FALLBACK_URL,
     }
   }
 
@@ -37,7 +37,7 @@ export async function fetchFreshRandomWallpaper(
       return {
         url: FALLBACK_WALLPAPER_URL,
         artist: FALLBACK_ARTIST,
-        photoUrl: FALLBACK_ARTIST_URL,
+        photoUrl: FALLBACK_URL,
       }
     }
 
@@ -58,7 +58,7 @@ export async function fetchFreshRandomWallpaper(
     return {
       url: FALLBACK_WALLPAPER_URL,
       artist: FALLBACK_ARTIST,
-      photoUrl: FALLBACK_ARTIST_URL,
+      photoUrl: FALLBACK_URL,
     }
   }
 }
