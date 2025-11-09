@@ -22,6 +22,8 @@ export type UserSettings = {
   gradient_to: string | null
   weather_lat: number | null
   weather_lon: number | null
+  news_country: string
+  news_category: string[]
 }
 
 export type WallpaperInfo = {
@@ -55,6 +57,16 @@ export type WeatherData = {
   hourly: HourlyWeather[]
 }
 
+export type NewsArticle = {
+  title: string
+  description: string
+  url: string
+  sourceName: string
+  urlToImage: string
+  author: string | null
+  publishedAt: string
+}
+
 export type NewTabItems = {
   links: QuickLink[]
   settings: UserSettings
@@ -62,6 +74,7 @@ export type NewTabItems = {
   weather: WeatherData | null
   generalTodos: GeneralTodo[]
   dailyTasks: DailyTaskWithCompletion[]
+  news: NewsArticle[] | null
 }
 
 export type GeneralTodo = {

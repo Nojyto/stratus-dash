@@ -10,6 +10,8 @@ export async function updateNewTabSettings(settings: {
   gradient_to?: string | null
   weather_lat?: number | null
   weather_lon?: number | null
+  news_country?: string
+  news_category?: string[]
 }) {
   const { supabase, user } = await getSupabaseWithUser()
 

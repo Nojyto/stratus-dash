@@ -26,6 +26,7 @@ const LocationPickerSkeleton = () => (
         </Label>
         <div className="shimmer-bg h-8 w-full rounded-md" />
       </div>
+
       <div className="grid gap-1">
         <Label htmlFor="lon" className="text-xs">
           Longitude
@@ -115,14 +116,17 @@ export function NewTabSettings({
           <Settings className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-80">
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Display Settings</h4>
           </div>
+
           <div className="grid gap-4">
             <div className="flex items-center justify-between">
               <Label htmlFor="wallpaper-mode">Image Mode</Label>
+
               <Switch
                 id="wallpaper-mode"
                 checked={wallpaperMode === "image"}
@@ -131,11 +135,13 @@ export function NewTabSettings({
                 }
               />
             </div>
+
             {wallpaperMode === "image" ? (
               <div className="grid gap-1">
                 <Label htmlFor="wallpaper-query" className="text-xs">
                   Wallpaper Query
                 </Label>
+
                 <Input
                   id="wallpaper-query"
                   value={wallpaperQuery}
@@ -147,8 +153,10 @@ export function NewTabSettings({
               <div></div>
             )}
           </div>
+
           <div className="grid gap-4">
             <Label className="text-xs">Weather Location</Label>
+
             <LocationPicker
               lat={lat}
               lon={lon}
@@ -156,6 +164,7 @@ export function NewTabSettings({
               onLonChange={setLon}
             />
           </div>
+
           <Button onClick={handleSettingsSave} disabled={isPending}>
             Save Settings
           </Button>

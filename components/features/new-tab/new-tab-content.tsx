@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import type {
   DailyTaskWithCompletion,
   GeneralTodo,
+  NewsArticle,
   QuickLink,
   UserSettings,
   WallpaperInfo,
@@ -18,6 +19,7 @@ import { Edit } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
+import { NewsWidget } from "./news/news-widget"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { QuickLinksSkeleton } from "./quick-links/quick-links-skeleton"
 import { SearchBar } from "./search-bar"
@@ -34,6 +36,7 @@ type NewTabContentProps = {
   initialWeather: WeatherData | null
   initialGeneralTodos: GeneralTodo[]
   initialDailyTasks: DailyTaskWithCompletion[]
+  initialNews: NewsArticle[] | null
   authButton: ReactNode
 }
 
@@ -45,6 +48,7 @@ export function NewTabContent({
   initialWeather,
   initialGeneralTodos,
   initialDailyTasks,
+  initialNews,
 }: NewTabContentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [wallpaperMode, setWallpaperMode] = useState(
@@ -59,13 +63,15 @@ export function NewTabContent({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isCustomThemeEditorOpen, setIsCustomThemeEditorOpen] = useState(false)
+  const [isNewsExpanded, setIsNewsExpanded] = useState(false)
 
   const isVisible =
     isHovering ||
     isMenuOpen ||
     isEditing ||
     isSettingsOpen ||
-    isCustomThemeEditorOpen
+    isCustomThemeEditorOpen ||
+    isNewsExpanded
 
   const skeletonCount = initialLinks.length > 0 ? initialLinks.length : 5
 
@@ -159,6 +165,13 @@ export function NewTabContent({
             wallpaperMode={wallpaperMode}
           />
         </div>
+
+        <NewsWidget
+          initialNews={initialNews}
+          initialSettings={initialSettings}
+          isExpanded={isNewsExpanded}
+          setIsExpandedAction={setIsNewsExpanded}
+        />
       </div>
     </TooltipProvider>
   )

@@ -14,7 +14,7 @@ export function Header() {
           <Link href={"/"}>Stratus Dash</Link>
         </div>
         <div className="flex items-center gap-2">
-          <ThemeSwitcher />
+          <ThemeSwitcher onOpenChangeAction={() => {}} />
           <AuthButton />
         </div>
       </div>

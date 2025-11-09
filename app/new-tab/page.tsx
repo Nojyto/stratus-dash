@@ -3,8 +3,15 @@ import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
 import { getNewTabItems } from "./actions/data"
 
 export default async function NewTabPage() {
-  const { links, settings, wallpaper, weather, generalTodos, dailyTasks } =
-    await getNewTabItems()
+  const {
+    links,
+    settings,
+    wallpaper,
+    weather,
+    generalTodos,
+    dailyTasks,
+    news,
+  } = await getNewTabItems()
 
   return (
     <NewTabContent
@@ -14,6 +21,7 @@ export default async function NewTabPage() {
       initialWeather={weather}
       initialGeneralTodos={generalTodos}
       initialDailyTasks={dailyTasks}
+      initialNews={news}
       authButton={<AuthButton />}
     />
   )

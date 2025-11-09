@@ -19,7 +19,7 @@ export default async function ProtectedPage() {
         <h2 className="text-2xl font-bold">Welcome, {user.email}</h2>
         <p>You are now logged in. You can proceed to your dashboard.</p>
         <Button asChild>
-          <Link href="/dashboard">Go to Dashboard</Link>
+          <Link href="/new-tab">Redirect</Link>
         </Button>
       </div>
     </div>

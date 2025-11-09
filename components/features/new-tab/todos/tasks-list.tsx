@@ -31,6 +31,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core"
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
   SortableContext,
   arrayMove,
@@ -125,7 +126,12 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
 
   const didDragEnd = useRef(false)
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 50,
+        tolerance: 10,
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
@@ -154,7 +160,7 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col overflow-x-hidden">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-medium">{title}</h3>
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
@@ -190,7 +196,11 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
         </Popover>
       </div>
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToVerticalAxis]}
+      >
         <SortableContext items={sortedItems.map((t) => t.id)}>
           <div className="flex flex-col gap-1">
             {sortedItems.length > 0 ? (

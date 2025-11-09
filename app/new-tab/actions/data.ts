@@ -1,5 +1,6 @@
 "use server"
 
+import { getNews } from "@/lib/external/news"
 import { getCachedRandomWallpaper } from "@/lib/external/wallpaper"
 import { getWeatherForCoords } from "@/lib/external/weather"
 import { createClient } from "@/lib/supabase/server"
@@ -8,6 +9,7 @@ import type {
   DailyTaskWithCompletion,
   GeneralTodo,
   NewTabItems,
+  NewsArticle,
   QuickLink,
   UserSettings,
   WallpaperInfo,
@@ -28,6 +30,8 @@ function _formatUserSettings(
     gradient_to: string | null
     weather_lat: number | null
     weather_lon: number | null
+    news_country: string | null
+    news_category: string[] | null
   } | null,
   userId: string
 ): UserSettings {
@@ -40,6 +44,8 @@ function _formatUserSettings(
     gradient_to: "280 65% 60%",
     weather_lat: null,
     weather_lon: null,
+    news_country: "us",
+    news_category: ["general"],
   }
 
   if (!dbSettings) {
@@ -56,6 +62,8 @@ function _formatUserSettings(
     gradient_to: dbSettings.gradient_to ?? defaults.gradient_to,
     weather_lat: dbSettings.weather_lat,
     weather_lon: dbSettings.weather_lon,
+    news_country: dbSettings.news_country ?? defaults.news_country,
+    news_category: dbSettings.news_category ?? defaults.news_category,
   }
 }
 
@@ -108,6 +116,12 @@ async function _getWeatherData(
   return null
 }
 
+async function _getNewsData(
+  settings: UserSettings
+): Promise<NewsArticle[] | null> {
+  return getNews(settings.news_country, settings.news_category, 1)
+}
+
 export async function getNewTabItems(): Promise<NewTabItems> {
   const supabase = await createClient()
   const {
@@ -130,7 +144,7 @@ export async function getNewTabItems(): Promise<NewTabItems> {
       supabase
         .from("user_settings")
         .select(
-          "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon"
+          "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon, news_country, news_category"
         )
         .eq("user_id", user.id)
         .maybeSingle(),
@@ -157,9 +171,10 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     console.error("Error fetching daily tasks:", dailyTasksResult.error)
 
   const settings = _formatUserSettings(settingsResult.data, user.id)
-  const [wallpaper, weather] = await Promise.all([
+  const [wallpaper, weather, news] = await Promise.all([
     _getWallpaperInfo(settings, settingsResult.data),
     _getWeatherData(settings),
+    _getNewsData(settings),
   ])
 
   const dailyTasks: DailyTaskWithCompletion[] = (
@@ -176,5 +191,6 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     weather,
     generalTodos: (generalTodosResult.data as GeneralTodo[]) ?? [],
     dailyTasks: dailyTasks,
+    news,
   }
 }
