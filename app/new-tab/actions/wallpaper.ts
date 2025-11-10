@@ -22,7 +22,7 @@ export async function refreshWallpaper(
   )
 
   revalidatePath("/new-tab")
-  revalidateTag("random-wallpaper-cache")
+  revalidateTag("random-wallpaper-cache", "max")
 
   return { success: true }
 }
@@ -67,6 +67,6 @@ export async function unlockWallpaper() {
 
   if (error) return { success: false, error: error.message }
   revalidatePath("/new-tab")
-  revalidateTag("random-wallpaper-cache")
+  revalidateTag("random-wallpaper-cache", "max")
   return { success: true }
 }

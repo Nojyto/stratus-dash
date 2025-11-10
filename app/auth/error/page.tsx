@@ -1,10 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function Page({
-  searchParams,
-}: {
-  searchParams: { error?: string }
-}) {
+type AuthErrorPageProps = {
+  params: Promise<{ [key: string]: string | string[] | undefined }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function Page({
+  searchParams: searchParamsPromise,
+}: AuthErrorPageProps) {
+  const searchParams = await searchParamsPromise
+  const error = searchParams?.error
+  const errorMessage = Array.isArray(error) ? error[0] : error
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -14,9 +21,9 @@ export default function Page({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {searchParams?.error ? (
+          {errorMessage ? (
             <p className="text-sm text-muted-foreground">
-              Code error: {searchParams.error}
+              Code error: {errorMessage}
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">

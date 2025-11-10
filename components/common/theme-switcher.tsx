@@ -16,7 +16,7 @@ import { useEffect, useState } from "react"
 export function ThemeSwitcher({
   onOpenChangeAction,
 }: {
-  onOpenChangeAction: (open: boolean) => void
+  onOpenChangeAction?: (open: boolean) => void
 }) {
   const [mounted, setMounted] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -43,7 +43,7 @@ export function ThemeSwitcher({
   const ICON_SIZE = 16
 
   return (
-    <DropdownMenu onOpenChange={onOpenChangeAction}>
+    <DropdownMenu onOpenChange={onOpenChangeAction ?? (() => {})}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
           {theme === "light" ? (
