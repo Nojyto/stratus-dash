@@ -25,7 +25,7 @@ import type {
 } from "@/types/new-tab"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Edit, GripVertical, Trash2 } from "lucide-react"
+import { Edit, GripVertical, Link, Trash2 } from "lucide-react"
 import Image from "next/image"
 import {
   useActionState,
@@ -54,6 +54,7 @@ export function TaskItem({
   const [isDeletePending, startDeleteTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [isQuickDeletePending, startQuickDeleteTransition] = useTransition()
+  const [imgError, setImgError] = useState(false)
 
   const {
     attributes,
@@ -139,6 +140,10 @@ export function TaskItem({
 
   const hostname = item.link ? getHostname(item.link) : null
 
+  useEffect(() => {
+    setImgError(false)
+  }, [item.link])
+
   return (
     <div
       ref={setNodeRef}
@@ -176,14 +181,20 @@ export function TaskItem({
           target="_blank"
           rel="noopener noreferrer"
           className="flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
         >
-          <Image
-            src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
-            alt=""
-            width={16}
-            height={16}
-            className="h-4 w-4"
-          />
+          {imgError ? (
+            <Link className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Image
+              src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
+              alt=""
+              width={16}
+              height={16}
+              className="h-4 w-4"
+              onError={() => setImgError(true)}
+            />
+          )}
         </a>
       )}
       {item.is_completed && taskType === "general" && (

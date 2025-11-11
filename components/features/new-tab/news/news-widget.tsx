@@ -27,11 +27,13 @@ export function NewsWidget({
   const [isLoading, setIsLoading] = React.useState(false)
   const [hasMore, setHasMore] = React.useState((initialNews?.length ?? 0) > 0)
   const loaderRef = React.useRef(null)
+  const [imgError, setImgError] = React.useState(false)
 
   React.useEffect(() => {
     setArticles(initialNews ?? [])
     setPage(2)
     setHasMore((initialNews?.length ?? 0) > 0)
+    setImgError(false)
   }, [initialNews])
 
   const loadMoreArticles = React.useCallback(async () => {
@@ -154,14 +156,17 @@ export function NewsWidget({
     >
       {firstArticle ? (
         <div className="relative h-20 w-full">
-          <Image
-            src={firstArticle.urlToImage}
-            alt={firstArticle.title}
-            fill
-            className="object-cover opacity-80 transition-transform duration-300 group-hover:scale-105"
-            sizes="500px"
-            priority
-          />
+          {!imgError && (
+            <Image
+              src={firstArticle.urlToImage}
+              alt={firstArticle.title}
+              fill
+              className="object-cover opacity-80 transition-transform duration-300 group-hover:scale-105"
+              sizes="500px"
+              priority
+              onError={() => setImgError(true)}
+            />
+          )}
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 

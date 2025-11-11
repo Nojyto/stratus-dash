@@ -4,7 +4,9 @@ import { cn, getHostname } from "@/lib/utils"
 import type { QuickLink } from "@/types/new-tab"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+import { Globe } from "lucide-react"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 import { EditLinkPopover } from "./edit-link-popover"
 
 type QuickLinkItemProps = {
@@ -22,6 +24,8 @@ export function QuickLinkItem({
   onUpdateAction,
   tabIndex,
 }: QuickLinkItemProps) {
+  const [imgError, setImgError] = useState(false)
+
   const {
     attributes,
     listeners,
@@ -41,6 +45,14 @@ export function QuickLinkItem({
   const displayTitle = link.title || null
   const Comp = isEditing ? "div" : "a"
   const hostname = getHostname(link.url)
+
+  useEffect(() => {
+    setImgError(false)
+  }, [link.url])
+
+  const handleImgError = () => {
+    setImgError(true)
+  }
 
   return (
     <div
@@ -63,14 +75,19 @@ export function QuickLinkItem({
         }}
         {...(isEditing ? listeners : {})}
       >
-        <Image
-          src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
-          alt=""
-          draggable="false"
-          width={36}
-          height={36}
-          className="h-9 w-9"
-        />
+        {imgError ? (
+          <Globe className="h-9 w-9 text-muted-foreground" />
+        ) : (
+          <Image
+            src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
+            alt=""
+            draggable="false"
+            width={36}
+            height={36}
+            className="h-9 w-9"
+            onError={handleImgError}
+          />
+        )}
       </Comp>
 
       {displayTitle && (

@@ -2,13 +2,21 @@
 
 import { formatTimeAgo } from "@/lib/utils"
 import type { NewsArticle } from "@/types/new-tab"
+import { Newspaper } from "lucide-react"
 import Image from "next/image"
+import { useEffect, useState } from "react"
 
 type NewsArticleCardProps = {
   article: NewsArticle
 }
 
 export function NewsArticleCard({ article }: NewsArticleCardProps) {
+  const [imgError, setImgError] = useState(false)
+
+  useEffect(() => {
+    setImgError(false)
+  }, [article.urlToImage])
+
   return (
     <a
       href={article.url}
@@ -16,13 +24,20 @@ export function NewsArticleCard({ article }: NewsArticleCardProps) {
     >
       {/* Image Container */}
       <div className="relative h-48 w-full">
-        <Image
-          src={article.urlToImage}
-          alt={article.title}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-        />
+        {imgError ? (
+          <div className="flex h-full w-full items-center justify-center bg-secondary">
+            <Newspaper className="h-16 w-16 text-muted-foreground" />
+          </div>
+        ) : (
+          <Image
+            src={article.urlToImage}
+            alt={article.title}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            onError={() => setImgError(true)}
+          />
+        )}
       </div>
       {/* Content */}
       <div className="flex flex-1 flex-col p-4">
