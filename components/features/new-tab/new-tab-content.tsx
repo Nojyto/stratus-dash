@@ -11,6 +11,7 @@ import type {
   GeneralTodo,
   NewsArticle,
   QuickLink,
+  StockData,
   UserSettings,
   WallpaperInfo,
   WeatherData,
@@ -23,6 +24,7 @@ import { NewsWidget } from "./news/news-widget"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { QuickLinksSkeleton } from "./quick-links/quick-links-skeleton"
 import { SearchBar } from "./search-bar"
+import { StockWidgets } from "./stock/stock-widgets"
 import { TaskSkeleton } from "./todos/task-skeleton"
 import { TasksWidget } from "./todos/tasks-widget"
 import { BackgroundManager } from "./wallpaper/background-manager"
@@ -37,6 +39,7 @@ type NewTabContentProps = {
   initialGeneralTodos: GeneralTodo[]
   initialDailyTasks: DailyTaskWithCompletion[]
   initialNews: NewsArticle[] | null
+  initialStocks: StockData[] | null
   authButton: ReactNode
 }
 
@@ -49,6 +52,7 @@ export function NewTabContent({
   initialGeneralTodos,
   initialDailyTasks,
   initialNews,
+  initialStocks,
 }: NewTabContentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [wallpaperMode, setWallpaperMode] = useState(
@@ -86,8 +90,9 @@ export function NewTabContent({
       />
 
       <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6">
-        <div className="absolute left-6 top-6 text-white">
+        <div className="absolute left-6 top-6 flex flex-row gap-2 text-white">
           <WeatherWidget initialData={initialWeather} />
+          <StockWidgets initialData={initialStocks} />
         </div>
 
         <div

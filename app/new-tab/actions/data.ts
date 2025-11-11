@@ -1,6 +1,7 @@
 "use server"
 
 import { getNews } from "@/lib/external/news"
+import { getStockData } from "@/lib/external/stock"
 import { getCachedRandomWallpaper } from "@/lib/external/wallpaper"
 import { getWeatherForCoords } from "@/lib/external/weather"
 import { createClient } from "@/lib/supabase/server"
@@ -32,6 +33,7 @@ function _formatUserSettings(
     weather_lon: number | null
     news_country: string | null
     news_category: string[] | null
+    tracked_stocks: string[] | null
   } | null,
   userId: string
 ): UserSettings {
@@ -46,6 +48,7 @@ function _formatUserSettings(
     weather_lon: null,
     news_country: "us",
     news_category: ["general"],
+    tracked_stocks: [],
   }
 
   if (!dbSettings) {
@@ -64,6 +67,7 @@ function _formatUserSettings(
     weather_lon: dbSettings.weather_lon,
     news_country: dbSettings.news_country ?? defaults.news_country,
     news_category: dbSettings.news_category ?? defaults.news_category,
+    tracked_stocks: dbSettings.tracked_stocks ?? defaults.tracked_stocks,
   }
 }
 
@@ -134,48 +138,56 @@ export async function getNewTabItems(): Promise<NewTabItems> {
 
   const today = new Date().toISOString().split("T")[0]
 
-  const [linksResult, settingsResult, generalTodosResult, dailyTasksResult] =
-    await Promise.all([
-      supabase
-        .from("quick_links")
-        .select("id, title, url, user_id, sort_order")
-        .eq("user_id", user.id)
-        .order("sort_order"),
-      supabase
-        .from("user_settings")
-        .select(
-          "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon, news_country, news_category"
-        )
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("general_todos")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("sort_order"),
-      supabase
-        .from("daily_tasks")
-        .select("*, daily_task_completions!left(id, completed_date)")
-        .eq("user_id", user.id)
-        .eq("daily_task_completions.completed_date", today)
-        .order("sort_order"),
-    ])
+  const settingsResult = await supabase
+    .from("user_settings")
+    .select(
+      "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon, news_country, news_category, tracked_stocks"
+    )
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (settingsResult.error)
+    console.error("Error fetching settings:", settingsResult.error)
+
+  const settings = _formatUserSettings(settingsResult.data, user.id)
+
+  const [
+    linksResult,
+    generalTodosResult,
+    dailyTasksResult,
+    wallpaper,
+    weather,
+    news,
+    stocks,
+  ] = await Promise.all([
+    supabase
+      .from("quick_links")
+      .select("id, title, url, user_id, sort_order")
+      .eq("user_id", user.id)
+      .order("sort_order"),
+    supabase
+      .from("general_todos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("sort_order"),
+    supabase
+      .from("daily_tasks")
+      .select("*, daily_task_completions!left(id, completed_date)")
+      .eq("user_id", user.id)
+      .eq("daily_task_completions.completed_date", today)
+      .order("sort_order"),
+    _getWallpaperInfo(settings, settingsResult.data),
+    _getWeatherData(settings),
+    _getNewsData(settings),
+    getStockData(settings.tracked_stocks),
+  ])
 
   if (linksResult.error)
     console.error("Error fetching links:", linksResult.error)
-  if (settingsResult.error)
-    console.error("Error fetching settings:", settingsResult.error)
   if (generalTodosResult.error)
     console.error("Error fetching general todos:", generalTodosResult.error)
   if (dailyTasksResult.error)
     console.error("Error fetching daily tasks:", dailyTasksResult.error)
-
-  const settings = _formatUserSettings(settingsResult.data, user.id)
-  const [wallpaper, weather, news] = await Promise.all([
-    _getWallpaperInfo(settings, settingsResult.data),
-    _getWeatherData(settings),
-    _getNewsData(settings),
-  ])
 
   const dailyTasks: DailyTaskWithCompletion[] = (
     dailyTasksResult.data || []
@@ -192,5 +204,6 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     generalTodos: (generalTodosResult.data as GeneralTodo[]) ?? [],
     dailyTasks: dailyTasks,
     news,
+    stocks,
   }
 }

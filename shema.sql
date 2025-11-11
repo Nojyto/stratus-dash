@@ -18,7 +18,8 @@ CREATE TABLE
     weather_lat double precision,
     weather_lon double precision,
     news_country text DEFAULT 'us'::text,
-    news_category text[] DEFAULT ARRAY['general'::text]
+    news_category text[] DEFAULT ARRAY['general'::text],
+    tracked_stocks text[] DEFAULT ARRAY['SPY'::text]
   );
 
 -- Enable Row Level Security (RLS)

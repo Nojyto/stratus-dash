@@ -1,6 +1,7 @@
 "use client"
 
 import { updateNewTabSettings } from "@/app/new-tab/actions/settings"
+import { MultiSelectCombobox } from "@/components/common/multi-select-combobox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
+import { STOCK_PRESETS } from "@/lib/external/stock-options"
 import type { UserSettings } from "@/types/new-tab"
 import { Settings } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -75,6 +77,9 @@ export function NewTabSettings({
   )
   const [lat, setLat] = useState(initialSettings.weather_lat ?? 51.5072)
   const [lon, setLon] = useState(initialSettings.weather_lon ?? -0.1276)
+  const [trackedStocks, setTrackedStocks] = useState(
+    initialSettings.tracked_stocks
+  )
 
   useEffect(() => {
     onWallpaperModeChangeAction(wallpaperMode)
@@ -89,6 +94,7 @@ export function NewTabSettings({
         gradient_to: gradientTo,
         weather_lat: lat,
         weather_lon: lon,
+        tracked_stocks: trackedStocks,
       })
 
       router.refresh()
@@ -104,9 +110,20 @@ export function NewTabSettings({
       setGradientTo(initialSettings.gradient_to ?? "280 65% 60%")
       setLat(initialSettings.weather_lat ?? 51.5072)
       setLon(initialSettings.weather_lon ?? -0.1276)
+      setTrackedStocks(initialSettings.tracked_stocks)
     }
     setIsSettingsOpen(open)
     onOpenChangeAction(open)
+  }
+
+  const handleStockSelection = (updater: React.SetStateAction<string[]>) => {
+    setTrackedStocks((current) => {
+      const next = typeof updater === "function" ? updater(current) : updater
+      if (next.length > 3) {
+        return next.slice(0, 3)
+      }
+      return next
+    })
   }
 
   return (
@@ -118,7 +135,7 @@ export function NewTabSettings({
       </PopoverTrigger>
 
       <PopoverContent className="w-80">
-        <div className="grid gap-4">
+        <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-2">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Display Settings</h4>
           </div>
@@ -152,6 +169,18 @@ export function NewTabSettings({
             ) : (
               <div></div>
             )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="text-xs">Tracked Stocks (Max 3)</Label>
+            <MultiSelectCombobox
+              options={STOCK_PRESETS}
+              selected={trackedStocks}
+              onChangeAction={handleStockSelection}
+              placeholder="Select stocks..."
+              searchPlaceholder="Search stocks..."
+              noResultsText="No stock found."
+            />
           </div>
 
           <div className="grid gap-4">

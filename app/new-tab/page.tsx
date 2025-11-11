@@ -11,6 +11,7 @@ export default async function NewTabPage() {
     generalTodos,
     dailyTasks,
     news,
+    stocks,
   } = await getNewTabItems()
 
   return (
@@ -22,6 +23,7 @@ export default async function NewTabPage() {
       initialGeneralTodos={generalTodos}
       initialDailyTasks={dailyTasks}
       initialNews={news}
+      initialStocks={stocks}
       authButton={<AuthButton />}
     />
   )

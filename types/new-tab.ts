@@ -24,6 +24,7 @@ export type UserSettings = {
   weather_lon: number | null
   news_country: string
   news_category: string[]
+  tracked_stocks: string[]
 }
 
 export type WallpaperInfo = {
@@ -67,6 +68,15 @@ export type NewsArticle = {
   publishedAt: string
 }
 
+export type StockData = {
+  symbol: string
+  current: number
+  percentChange: number
+  change: number
+  previousClose: number
+  urlSymbol: string
+}
+
 export type NewTabItems = {
   links: QuickLink[]
   settings: UserSettings
@@ -75,6 +85,7 @@ export type NewTabItems = {
   generalTodos: GeneralTodo[]
   dailyTasks: DailyTaskWithCompletion[]
   news: NewsArticle[] | null
+  stocks: StockData[] | null
 }
 
 export type GeneralTodo = {
