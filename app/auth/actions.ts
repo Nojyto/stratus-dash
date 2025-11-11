@@ -5,6 +5,38 @@ import { createClient } from "@/lib/supabase/server"
 import { FormState } from "@/types/new-tab"
 import { redirect } from "next/navigation"
 
+async function _validateSignupEmail(
+  email: string
+): Promise<{ error: string } | null> {
+  const restrictSignup = process.env.RESTRICT_SIGNUP === "true"
+  if (!restrictSignup) {
+    return null
+  }
+
+  const allowedEmailsEnv = process.env.ALLOWED_EMAILS
+  if (!allowedEmailsEnv) {
+    console.error(
+      "SIGNUP ERROR: RESTRICT_SIGNUP is true, but no ALLOWED_EMAILS list is provided in .env"
+    )
+    return {
+      error: "Sign-up is currently disabled. Please contact an administrator.",
+    }
+  }
+
+  const allowedEmails = allowedEmailsEnv
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+
+  if (!email || !allowedEmails.includes(email.toLowerCase())) {
+    return {
+      error:
+        "Sign-up is restricted. Please contact an administrator for access.",
+    }
+  }
+
+  return null
+}
+
 export async function login(
   prevState: FormState | null,
   formData: FormData
@@ -40,31 +72,9 @@ export async function signup(
   const password = formData.get("password") as string
   const repeatPassword = formData.get("repeat-password") as string
 
-  const restrictSignup = process.env.RESTRICT_SIGNUP === "true"
-
-  if (restrictSignup) {
-    const allowedEmailsEnv = process.env.ALLOWED_EMAILS
-
-    if (!allowedEmailsEnv) {
-      console.error(
-        "SIGNUP ERROR: RESTRICT_SIGNUP is true, but no ALLOWED_EMAILS list is provided in .env"
-      )
-      return {
-        error:
-          "Sign-up is currently disabled. Please contact an administrator.",
-      }
-    }
-
-    const allowedEmails = allowedEmailsEnv
-      .split(",")
-      .map((e) => e.trim().toLowerCase())
-
-    if (!email || !allowedEmails.includes(email.toLowerCase())) {
-      return {
-        error:
-          "Sign-up is restricted. Please contact an administrator for access.",
-      }
-    }
+  const emailValidationError = await _validateSignupEmail(email)
+  if (emailValidationError) {
+    return emailValidationError
   }
 
   if (!email || !password || !repeatPassword) {

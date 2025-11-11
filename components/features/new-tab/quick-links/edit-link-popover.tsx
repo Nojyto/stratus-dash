@@ -65,7 +65,7 @@ export function EditLinkPopover({
     startDeleteTransition(async () => {
       onDeleteAction(link.id)
       setPopoverOpen(false)
-      await deleteQuickLink(null, link.id)
+      await deleteQuickLink(link.id)
     })
   }
 
