@@ -1,6 +1,14 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+export const defaultUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "http://localhost:3000"
+
+export const absoluteUrl = (path: string) => {
+  return `${defaultUrl}${path}`
+}
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -12,7 +20,7 @@ export function prefixUrl(url: string): string {
   return `https://${url}`
 }
 
-export function getHostname(url: string): string {
+export function getHostname(url: string): string | null {
   try {
     const fullUrl =
       url.startsWith("http://") || url.startsWith("https://")
@@ -20,7 +28,7 @@ export function getHostname(url: string): string {
         : `https://${url}`
     return new URL(fullUrl).hostname
   } catch {
-    return "duckduckgo.com"
+    return null
   }
 }
 

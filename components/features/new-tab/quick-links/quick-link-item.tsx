@@ -25,6 +25,7 @@ export function QuickLinkItem({
   tabIndex,
 }: QuickLinkItemProps) {
   const [imgError, setImgError] = useState(false)
+  const hostname = getHostname(link.url)
 
   const {
     attributes,
@@ -44,11 +45,10 @@ export function QuickLinkItem({
 
   const displayTitle = link.title || null
   const Comp = isEditing ? "div" : "a"
-  const hostname = getHostname(link.url)
 
   useEffect(() => {
-    setImgError(false)
-  }, [link.url])
+    setImgError(hostname === null)
+  }, [link.url, hostname])
 
   const handleImgError = () => {
     setImgError(true)
@@ -75,16 +75,16 @@ export function QuickLinkItem({
         }}
         {...(isEditing ? listeners : {})}
       >
-        {imgError ? (
-          <Globe className="h-9 w-9 text-muted-foreground" />
+        {imgError || !hostname ? (
+          <Globe className="h-8 w-8 text-muted-foreground" />
         ) : (
           <Image
-            src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
+            src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=32`}
             alt=""
             draggable="false"
-            width={36}
-            height={36}
-            className="h-9 w-9"
+            width={32}
+            height={32}
+            className="h-8 w-8"
             onError={handleImgError}
           />
         )}

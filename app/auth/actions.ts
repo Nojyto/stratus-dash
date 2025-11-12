@@ -1,7 +1,7 @@
 "use server"
 
-import { absoluteUrl } from "@/lib/config"
 import { createClient } from "@/lib/supabase/server"
+import { absoluteUrl } from "@/lib/utils"
 import { FormState } from "@/types/new-tab"
 import { redirect } from "next/navigation"
 

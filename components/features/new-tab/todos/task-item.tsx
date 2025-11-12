@@ -55,6 +55,7 @@ export function TaskItem({
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [isQuickDeletePending, startQuickDeleteTransition] = useTransition()
   const [imgError, setImgError] = useState(false)
+  const hostname = item.link ? getHostname(item.link) : null
 
   const {
     attributes,
@@ -138,11 +139,9 @@ export function TaskItem({
     }
   }, [state])
 
-  const hostname = item.link ? getHostname(item.link) : null
-
   useEffect(() => {
-    setImgError(false)
-  }, [item.link])
+    setImgError(hostname === null)
+  }, [item.link, hostname])
 
   return (
     <div
@@ -178,8 +177,6 @@ export function TaskItem({
       {hostname && (
         <a
           href={item.link!}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
@@ -187,7 +184,7 @@ export function TaskItem({
             <Link className="h-4 w-4 text-muted-foreground" />
           ) : (
             <Image
-              src={`https://icons.duckduckgo.com/ip3/${hostname}.ico`}
+              src={`https://www.google.com/s2/favicons?domain=${hostname}&sz=16`}
               alt=""
               width={16}
               height={16}

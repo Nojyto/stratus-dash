@@ -31,59 +31,10 @@ export async function getDashboardItems(): Promise<DashboardItems> {
   }
 }
 
-type TableName = "notes" | "folders"
-type Item = Note | Folder
-type CreateItemInput<T extends Item> = T extends Note
-  ? Pick<Note, "title" | "folder_id"> & { content: string }
-  : Pick<Folder, "name" | "parent_id">
-type UpdateItemInput<T extends Item> = T extends Note
-  ? Partial<Pick<Note, "title" | "content">>
-  : Partial<Pick<Folder, "name">>
-
-async function _createItem<T extends Item>(
-  supabase: SupabaseClient,
-  userId: string,
-  table: TableName,
-  item: CreateItemInput<T>
-): Promise<T | null> {
-  const { data, error } = await supabase
-    .from(table)
-    .insert([{ ...item, user_id: userId }])
-    .select()
-    .single()
-
-  if (error) {
-    console.error(`Error creating ${table}:`, error)
-    return null
-  }
-  revalidatePath("/dashboard")
-  return data as T
-}
-
-async function _updateItem<T extends Item>(
-  supabase: SupabaseClient,
-  table: TableName,
-  id: string,
-  item: UpdateItemInput<T>
-): Promise<T | null> {
-  const { data, error } = await supabase
-    .from(table)
-    .update(item)
-    .eq("id", id)
-    .select()
-    .single()
-
-  if (error) {
-    console.error(`Error updating ${table}:`, error)
-    return null
-  }
-  revalidatePath("/dashboard")
-  return data as T
-}
-
+// _deleteItem is simple and generic enough to be shared
 async function _deleteItem(
   supabase: SupabaseClient,
-  table: TableName,
+  table: "notes" | "folders",
   id: string
 ): Promise<{ success: boolean }> {
   const { error } = await supabase.from(table).delete().eq("id", id)
@@ -100,10 +51,24 @@ export async function createNote(
   note: Pick<Note, "title" | "folder_id">
 ): Promise<Note | null> {
   const { supabase, user } = await getSupabaseWithUser()
-  return _createItem<Note>(supabase, user.id, "notes", {
-    ...note,
-    content: "",
-  })
+  const { data, error } = await supabase
+    .from("notes")
+    .insert([
+      {
+        ...note,
+        content: "",
+        user_id: user.id,
+      },
+    ])
+    .select()
+    .single()
+
+  if (error) {
+    console.error(`Error creating note:`, error)
+    return null
+  }
+  revalidatePath("/dashboard")
+  return data
 }
 
 export async function updateNote(
@@ -111,7 +76,19 @@ export async function updateNote(
   note: Partial<Pick<Note, "title" | "content">>
 ): Promise<Note | null> {
   const { supabase } = await getSupabaseWithUser()
-  return _updateItem<Note>(supabase, "notes", id, note)
+  const { data, error } = await supabase
+    .from("notes")
+    .update(note)
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error(`Error updating note:`, error)
+    return null
+  }
+  revalidatePath("/dashboard")
+  return data
 }
 
 export async function deleteNote(id: string): Promise<{ success: boolean }> {
@@ -123,7 +100,18 @@ export async function createFolder(
   folder: Pick<Folder, "name" | "parent_id">
 ): Promise<Folder | null> {
   const { supabase, user } = await getSupabaseWithUser()
-  return _createItem<Folder>(supabase, user.id, "folders", folder)
+  const { data, error } = await supabase
+    .from("folders")
+    .insert([{ ...folder, user_id: user.id }])
+    .select()
+    .single()
+
+  if (error) {
+    console.error(`Error creating folder:`, error)
+    return null
+  }
+  revalidatePath("/dashboard")
+  return data
 }
 
 export async function updateFolder(
@@ -131,7 +119,19 @@ export async function updateFolder(
   folder: Partial<Pick<Folder, "name">>
 ): Promise<Folder | null> {
   const { supabase } = await getSupabaseWithUser()
-  return _updateItem<Folder>(supabase, "folders", id, folder)
+  const { data, error } = await supabase
+    .from("folders")
+    .update(folder)
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error(`Error updating folder:`, error)
+    return null
+  }
+  revalidatePath("/dashboard")
+  return data
 }
 
 export async function deleteFolder(id: string): Promise<{ success: boolean }> {

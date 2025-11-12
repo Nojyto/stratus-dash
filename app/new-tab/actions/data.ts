@@ -155,11 +155,11 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     linksResult,
     generalTodosResult,
     dailyTasksResult,
-    wallpaper,
-    weather,
-    news,
-    stocks,
-  ] = await Promise.all([
+    wallpaperResult,
+    weatherResult,
+    newsResult,
+    stocksResult,
+  ] = await Promise.allSettled([
     supabase
       .from("quick_links")
       .select("id, title, url, user_id, sort_order")
@@ -182,27 +182,54 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     getStockData(settings.tracked_stocks),
   ])
 
-  if (linksResult.error)
-    console.error("Error fetching links:", linksResult.error)
-  if (generalTodosResult.error)
-    console.error("Error fetching general todos:", generalTodosResult.error)
-  if (dailyTasksResult.error)
-    console.error("Error fetching daily tasks:", dailyTasksResult.error)
+  if (linksResult.status === "rejected")
+    console.error("Error fetching links:", linksResult.reason)
+  if (generalTodosResult.status === "rejected")
+    console.error("Error fetching general todos:", generalTodosResult.reason)
+  if (dailyTasksResult.status === "rejected")
+    console.error("Error fetching daily tasks:", dailyTasksResult.reason)
+  if (wallpaperResult.status === "rejected")
+    console.error("Error fetching wallpaper:", wallpaperResult.reason)
+  if (weatherResult.status === "rejected")
+    console.error("Error fetching weather:", weatherResult.reason)
+  if (newsResult.status === "rejected")
+    console.error("Error fetching news:", newsResult.reason)
+  if (stocksResult.status === "rejected")
+    console.error("Error fetching stocks:", stocksResult.reason)
+
+  const links =
+    linksResult.status === "fulfilled"
+      ? ((linksResult.value.data as QuickLink[]) ?? [])
+      : []
+  const generalTodos =
+    generalTodosResult.status === "fulfilled"
+      ? ((generalTodosResult.value.data as GeneralTodo[]) ?? [])
+      : []
+  const dailyTasksResultData =
+    dailyTasksResult.status === "fulfilled" ? dailyTasksResult.value.data : []
+  const wallpaper =
+    wallpaperResult.status === "fulfilled"
+      ? wallpaperResult.value
+      : { url: "", artist: "", photoUrl: "", isLocked: false }
+  const weather =
+    weatherResult.status === "fulfilled" ? weatherResult.value : null
+  const news = newsResult.status === "fulfilled" ? newsResult.value : null
+  const stocks = stocksResult.status === "fulfilled" ? stocksResult.value : null
 
   const dailyTasks: DailyTaskWithCompletion[] = (
-    dailyTasksResult.data || []
+    dailyTasksResultData || []
   ).map((task: DailyTask & { daily_task_completions: unknown[] }) => ({
     ...task,
     is_completed_today: task.daily_task_completions.length > 0,
   }))
 
   return {
-    links: (linksResult.data as QuickLink[]) ?? [],
+    links,
     settings,
     wallpaper,
     weather,
-    generalTodos: (generalTodosResult.data as GeneralTodo[]) ?? [],
-    dailyTasks: dailyTasks,
+    generalTodos,
+    dailyTasks,
     news,
     stocks,
   }

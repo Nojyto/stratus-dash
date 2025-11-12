@@ -1,7 +1,10 @@
 "use server"
 
-import { getNextSortOrder, updateSortOrder } from "@/lib/supabase/helpers"
-import { getSupabaseWithUser } from "@/lib/supabase/utils"
+import {
+  getNextSortOrder,
+  getSupabaseWithUser,
+  updateSortOrder,
+} from "@/lib/supabase/utils"
 import { prefixUrl } from "@/lib/utils"
 import type { FormState } from "@/types/new-tab"
 

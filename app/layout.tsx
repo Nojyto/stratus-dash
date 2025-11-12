@@ -1,4 +1,4 @@
-import { absoluteUrl } from "@/lib/config"
+import { absoluteUrl } from "@/lib/utils"
 import type { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 import { Geist } from "next/font/google"
