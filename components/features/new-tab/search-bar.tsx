@@ -111,7 +111,7 @@ export function SearchBar({ initialEngine }: SearchBarProps) {
   }
 
   return (
-    <div className="w-full max-w-lg">
+    <div className="hidden w-full max-w-lg md:block">
       <form onSubmit={handleSearch} className="relative flex items-center">
         <Input
           name="searchquery"

@@ -92,7 +92,7 @@ export function NewsWidget({
       <>
         <div
           onClick={() => setIsExpandedAction(false)}
-          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-6 pt-12 backdrop-blur-sm animate-in fade-in-0"
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4 pt-12 backdrop-blur-sm animate-in fade-in-0 sm:p-6"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -152,7 +152,7 @@ export function NewsWidget({
   return (
     <button
       onClick={() => setIsExpandedAction(true)}
-      className="group absolute bottom-6 left-1/2 w-full max-w-md -translate-x-1/2 cursor-pointer overflow-hidden rounded-lg bg-secondary/50 text-left text-foreground shadow-md backdrop-blur-sm transition-all hover:bg-secondary/75 hover:shadow-lg"
+      className="group relative mx-auto mb-0.5 w-full max-w-md cursor-pointer overflow-hidden rounded-lg bg-secondary/50 text-left text-foreground shadow-md backdrop-blur-sm transition-all hover:bg-secondary/75 hover:shadow-lg"
     >
       {firstArticle ? (
         <div className="relative h-20 w-full">

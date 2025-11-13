@@ -39,7 +39,7 @@ export function TasksWidget({
   const hasGeneral = initialGeneralTodos.length > 0
 
   return (
-    <div className="flex h-fit max-h-[500px] w-64 flex-col overflow-hidden rounded-lg bg-secondary/50 p-4 backdrop-blur-sm">
+    <div className="flex h-fit max-h-[500px] w-full flex-col overflow-hidden rounded-lg bg-secondary/50 p-4 backdrop-blur-sm">
       <div className="flex flex-col gap-4 overflow-y-auto">
         <TasksList
           title="Daily Tasks"

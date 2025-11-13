@@ -77,7 +77,7 @@ export function WeatherWidget({
         </TooltipTrigger>
       </Tooltip>
       <PopoverContent className="w-auto p-0">
-        <div className="grid max-h-64 grid-cols-1 overflow-y-auto bg-secondary/50 p-1 backdrop-blur-sm">
+        <div className="grid max-h-[50vh] grid-cols-1 overflow-y-auto bg-secondary/50 p-1 backdrop-blur-sm">
           {hourly.map((hour) => (
             <Tooltip key={hour.time}>
               <TooltipTrigger asChild>

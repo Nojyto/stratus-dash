@@ -89,15 +89,16 @@ export function NewTabContent({
         theme={theme}
       />
 
-      <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-start gap-12 p-6">
-        <div className="absolute left-6 top-6 flex flex-row gap-2 text-white">
+      {/* === Top === */}
+      <div className="relative z-10 flex min-h-screen w-full flex-col items-center gap-8 p-4 sm:p-6">
+        <div className="absolute left-4 right-4 top-4 flex flex-row flex-wrap gap-2 sm:left-6 sm:right-auto sm:top-6 sm:flex-nowrap">
           <WeatherWidget initialData={initialWeather} />
           <StockWidgets initialData={initialStocks} />
         </div>
 
         <div
           className={cn(
-            "absolute right-6 top-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
+            "absolute right-4 top-24 flex flex-col items-end gap-1 opacity-0 transition-opacity delay-300 duration-300 sm:right-6 sm:top-6 sm:flex-row",
             isVisible && "opacity-100 delay-0 duration-0"
           )}
           onMouseEnter={() => setIsHovering(true)}
@@ -121,10 +122,10 @@ export function NewTabContent({
           {authButton}
         </div>
 
-        <div className="flex w-full max-w-7xl flex-1 items-start justify-center gap-8 pt-32 xl:justify-between">
-          {/* This is the empty left slot. */}
+        {/* === Main Content === */}
+        <div className="flex w-full max-w-7xl flex-1 flex-col items-center gap-8 pt-48 sm:pt-32 xl:flex-row xl:items-start xl:justify-between">
           <div className="hidden w-64 xl:block"></div>
-          <div className="flex w-full max-w-lg flex-col items-center gap-12">
+          <div className="flex w-full max-w-lg flex-col items-center gap-8">
             <ClientOnly fallback={<QuickLinksSkeleton count={skeletonCount} />}>
               <QuickLinksGrid
                 initialLinks={initialLinks}
@@ -137,8 +138,7 @@ export function NewTabContent({
               initialEngine={initialSettings.default_search_engine ?? "google"}
             />
           </div>
-
-          <div className="hidden w-64 xl:block">
+          <div className="w-full max-w-lg xl:w-64">
             <ClientOnly fallback={<TaskSkeleton />}>
               <TasksWidget
                 initialDailyTasks={initialDailyTasks}
@@ -147,10 +147,19 @@ export function NewTabContent({
             </ClientOnly>
           </div>
         </div>
-        {/* Wallpaper Controls */}
+
+        {/* Bottom center: News */}
+        <NewsWidget
+          initialNews={initialNews}
+          initialSettings={initialSettings}
+          isExpanded={isNewsExpanded}
+          setIsExpandedAction={setIsNewsExpanded}
+        />
+
+        {/* Bottom left: Wallpaper Controls */}
         <div
           className={cn(
-            "absolute bottom-6 left-6 flex items-center gap-1 opacity-0 transition-opacity delay-300 duration-300",
+            "absolute bottom-6 left-4 right-4 flex items-center justify-center gap-1 opacity-0 transition-opacity delay-300 duration-300 sm:left-6 sm:right-auto sm:justify-start",
             isVisible && "opacity-100 delay-0 duration-0"
           )}
           onMouseEnter={() => setIsHovering(true)}
@@ -170,13 +179,6 @@ export function NewTabContent({
             wallpaperMode={wallpaperMode}
           />
         </div>
-
-        <NewsWidget
-          initialNews={initialNews}
-          initialSettings={initialSettings}
-          isExpanded={isNewsExpanded}
-          setIsExpandedAction={setIsNewsExpanded}
-        />
       </div>
     </TooltipProvider>
   )

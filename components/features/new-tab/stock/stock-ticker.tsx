@@ -31,27 +31,30 @@ export function StockTicker({ data }: { data: StockData }) {
           href={externalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="group inline-flex h-auto w-full cursor-pointer items-center rounded-full bg-secondary/50 p-2 px-3 text-left text-foreground backdrop-blur-sm transition-colors hover:bg-secondary/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group inline-flex h-auto w-32 cursor-pointer items-center rounded-full bg-secondary/50 p-2 px-4 text-left text-foreground backdrop-blur-sm transition-colors hover:bg-secondary/75 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex w-full items-center justify-between gap-3">
-            <span
-              className={cn(
-                "w-10 truncate font-bold group-hover:underline",
-                getFontSize(symbol)
-              )}
-            >
-              {symbol}
-            </span>
-            <div className="flex flex-col items-end">
-              <span className="font-semibold">{current.toFixed(2)}</span>
+          <div className="flex w-full items-center justify-between gap-2">
+            <div className="flex flex-col">
               <span
                 className={cn(
-                  "text-xs",
-                  isPositive ? "text-green-400" : "text-red-400"
+                  "w-12 truncate font-bold group-hover:underline",
+                  getFontSize(symbol)
                 )}
               >
-                {formattedPercentChange}
+                {symbol}
               </span>
+              <span className="text-xs text-muted-foreground">
+                {current.toFixed(2)}
+              </span>
+            </div>
+            <div
+              className={cn(
+                "flex flex-col items-end text-xs",
+                isPositive ? "text-green-400" : "text-red-400"
+              )}
+            >
+              <span>{formattedPercentChange}</span>
+              <span>{change.toFixed(2)}</span>
             </div>
           </div>
         </a>
