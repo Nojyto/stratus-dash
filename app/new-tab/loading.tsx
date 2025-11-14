@@ -18,14 +18,14 @@ export default function Loading() {
           {/* QuickLinks */}
           <div className="flex max-w-lg flex-wrap items-start justify-center gap-x-4 gap-y-6">
             {Array.from({ length: skeletonCount }).map((_, i) => (
-              <div key={i} className="flex w-20 flex-col items-center gap-1.5">
+              <div key={i} className="flex w-14 flex-col items-center gap-1.5">
                 <div className="shimmer-bg h-14 w-14 rounded-2xl"></div>
-                <div className="shimmer-bg h-4 w-16 rounded-md"></div>
+                <div className="shimmer-bg h-2 w-14 rounded-md"></div>
               </div>
             ))}
           </div>
           {/* SearchBar Skeleton */}
-          <div className="shimmer-bg hidden h-12 w-full max-w-lg rounded-full md:visible"></div>
+          <div className="shimmer-bg hidden h-12 w-full max-w-lg rounded-full md:block"></div>
         </div>
         {/* Right: Tasks */}
         <div className="w-full max-w-lg xl:w-64">

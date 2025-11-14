@@ -1,6 +1,8 @@
 # Stratus Dash
 
-Stratus Dash is a personal productivity dashboard that replaces your browser's "New Tab" page. It's designed to be fast, and with a modern design, to give you quick access to your most-used links, tasks, weather, and news.
+![Screenshot of the new-tab page](docs/images/new-tab.png)
+
+Stratus Dash is a personal productivity dashboard that replaces your browser's "New Tab" page. It's designed to be fast, and with a modern design, to give you quick access to your most-used links, tasks, weather, stocks, and news.
 
 ## Features
 
@@ -19,6 +21,7 @@ Stratus Dash is a personal productivity dashboard that replaces your browser's "
   - Both lists support adding, editing, deleting, and re-ordering.
 - **Weather Widget:** Shows the current temperature, high/low, and a simple hourly forecast for any location you set.
 - **News Widget:** Shows the latest top headlines. You can customize the country and news categories in the settings.
+- **Stock Widgt:** Shows the current price of some stocks.
 - **Theme Controls:**
   - Switch between Light, Dark, and System modes.
   - A "Custom" theme option with an editor to create your own color scheme.
@@ -38,6 +41,7 @@ Stratus Dash is a personal productivity dashboard that replaces your browser's "
   - [Unsplash](https://unsplash.com/developers) (for wallpapers)
   - [OpenWeatherMap](https://openweathermap.org/) (for weather)
   - [NewsAPI.org](https://newsapi.org/) (for news)
+  - [Finnhub](https://finnhub.io/dashboard) (for stock prices)
 - **Package Manager:** [pnpm](https://pnpm.io/)
 
 ## How to Get Started
@@ -80,25 +84,6 @@ This project needs a Supabase project for the database and user sign-ups.
    ```
 
 2. **Fill in the Keys:** Open the new `.env` file and add your secret keys.
-
-   ```env
-   # Get these from your Supabase Project: Settings > API
-   NEXT_PUBLIC_SUPABASE_URL=YOUR_PROJECT_URL
-   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=YOUR_ANON_KEY
-
-   # Get this from https://unsplash.com/developers
-   UNSPLASH_ACCESS_KEY=YOUR_UNSPLASH_KEY
-
-   # Get this from https://openweathermap.org/
-   OPENWEATHER_API_KEY=YOUR_OPENWEATHER_KEY
-
-   # Get this from https://newsapi.org/
-   NEWS_API_KEY=YOUR_NEWSAPI_KEY
-
-   # You can leave these as they are to allow anyone to sign up
-   RESTRICT_SIGNUP=false
-   ALLOWED_EMAILS=user1@example.com,user2@example.com
-   ```
 
 ### 5. Develop
 
