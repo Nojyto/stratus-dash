@@ -9,38 +9,32 @@ import { cn } from "@/lib/utils"
 import type {
   DailyTaskWithCompletion,
   GeneralTodo,
-  NewsArticle,
   QuickLink,
-  StockData,
   UserSettings,
   WallpaperInfo,
-  WeatherData,
 } from "@/types/new-tab"
 import { Edit } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
-import { NewsWidget } from "./news/news-widget"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { QuickLinksSkeleton } from "./quick-links/quick-links-skeleton"
 import { SearchBar } from "./search-bar"
-import { StockWidgets } from "./stock/stock-widgets"
 import { TaskSkeleton } from "./todos/task-skeleton"
 import { TasksWidget } from "./todos/tasks-widget"
 import { BackgroundManager } from "./wallpaper/background-manager"
 import { WallpaperControls } from "./wallpaper/wallpaper-controls"
-import { WeatherWidget } from "./weather/weather-widget"
 
 type NewTabContentProps = {
   initialLinks: QuickLink[]
   initialSettings: UserSettings
   initialWallpaper: WallpaperInfo
-  initialWeather: WeatherData | null
   initialGeneralTodos: GeneralTodo[]
   initialDailyTasks: DailyTaskWithCompletion[]
-  initialNews: NewsArticle[] | null
-  initialStocks: StockData[] | null
   authButton: ReactNode
+  weatherWidget: ReactNode
+  stockWidgets: ReactNode
+  newsWidget: ReactNode
 }
 
 export function NewTabContent({
@@ -48,11 +42,11 @@ export function NewTabContent({
   initialSettings,
   initialWallpaper,
   authButton,
-  initialWeather,
   initialGeneralTodos,
   initialDailyTasks,
-  initialNews,
-  initialStocks,
+  weatherWidget,
+  stockWidgets,
+  newsWidget,
 }: NewTabContentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [wallpaperMode, setWallpaperMode] = useState(
@@ -67,15 +61,13 @@ export function NewTabContent({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isCustomThemeEditorOpen, setIsCustomThemeEditorOpen] = useState(false)
-  const [isNewsExpanded, setIsNewsExpanded] = useState(false)
 
   const isVisible =
     isHovering ||
     isMenuOpen ||
     isEditing ||
     isSettingsOpen ||
-    isCustomThemeEditorOpen ||
-    isNewsExpanded
+    isCustomThemeEditorOpen
 
   const skeletonCount = initialLinks.length > 0 ? initialLinks.length : 5
 
@@ -92,8 +84,8 @@ export function NewTabContent({
       {/* === Top === */}
       <div className="relative z-10 flex min-h-screen w-full flex-col items-center gap-8 p-4 sm:p-6">
         <div className="absolute left-4 right-4 top-4 flex flex-row flex-wrap gap-2 sm:left-6 sm:right-auto sm:top-6 sm:flex-nowrap">
-          <WeatherWidget initialData={initialWeather} />
-          <StockWidgets initialData={initialStocks} />
+          {weatherWidget}
+          {stockWidgets}
         </div>
 
         <div
@@ -149,12 +141,7 @@ export function NewTabContent({
         </div>
 
         {/* Bottom center: News */}
-        <NewsWidget
-          initialNews={initialNews}
-          initialSettings={initialSettings}
-          isExpanded={isNewsExpanded}
-          setIsExpandedAction={setIsNewsExpanded}
-        />
+        {newsWidget}
 
         {/* Bottom left: Wallpaper Controls */}
         <div

@@ -90,11 +90,9 @@ export function QuickLinkItem({
         )}
       </Comp>
 
-      {displayTitle && (
-        <span className="w-full truncate text-center text-xs text-foreground">
-          {displayTitle}
-        </span>
-      )}
+      <span className="h-4 w-full truncate text-center text-xs text-foreground">
+        {displayTitle}
+      </span>
 
       {isEditing && (
         <EditLinkPopover

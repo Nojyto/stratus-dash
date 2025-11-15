@@ -9,9 +9,10 @@ import type {
   DailyTask,
   DailyTaskWithCompletion,
   GeneralTodo,
-  NewTabItems,
+  NewTabCoreData,
   NewsArticle,
   QuickLink,
+  StockData,
   UserSettings,
   WallpaperInfo,
   WeatherData,
@@ -111,7 +112,7 @@ async function _getWallpaperInfo(
   }
 }
 
-async function _getWeatherData(
+export async function getWeatherData(
   settings: UserSettings
 ): Promise<WeatherData | null> {
   if (settings.weather_lat != null && settings.weather_lon != null) {
@@ -120,13 +121,19 @@ async function _getWeatherData(
   return null
 }
 
-async function _getNewsData(
+export async function getNewsData(
   settings: UserSettings
 ): Promise<NewsArticle[] | null> {
   return getNews(settings.news_country, settings.news_category, 1)
 }
 
-export async function getNewTabItems(): Promise<NewTabItems> {
+export async function getStockDataForUser(
+  settings: UserSettings
+): Promise<StockData[] | null> {
+  return getStockData(settings.tracked_stocks)
+}
+
+export async function getNewTabCoreData(): Promise<NewTabCoreData> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -151,36 +158,26 @@ export async function getNewTabItems(): Promise<NewTabItems> {
 
   const settings = _formatUserSettings(settingsResult.data, user.id)
 
-  const [
-    linksResult,
-    generalTodosResult,
-    dailyTasksResult,
-    wallpaperResult,
-    weatherResult,
-    newsResult,
-    stocksResult,
-  ] = await Promise.allSettled([
-    supabase
-      .from("quick_links")
-      .select("id, title, url, user_id, sort_order")
-      .eq("user_id", user.id)
-      .order("sort_order"),
-    supabase
-      .from("general_todos")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("sort_order"),
-    supabase
-      .from("daily_tasks")
-      .select("*, daily_task_completions!left(id, completed_date)")
-      .eq("user_id", user.id)
-      .eq("daily_task_completions.completed_date", today)
-      .order("sort_order"),
-    _getWallpaperInfo(settings, settingsResult.data),
-    _getWeatherData(settings),
-    _getNewsData(settings),
-    getStockData(settings.tracked_stocks),
-  ])
+  const [linksResult, generalTodosResult, dailyTasksResult, wallpaperResult] =
+    await Promise.allSettled([
+      supabase
+        .from("quick_links")
+        .select("id, title, url, user_id, sort_order")
+        .eq("user_id", user.id)
+        .order("sort_order"),
+      supabase
+        .from("general_todos")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("sort_order"),
+      supabase
+        .from("daily_tasks")
+        .select("*, daily_task_completions!left(id, completed_date)")
+        .eq("user_id", user.id)
+        .eq("daily_task_completions.completed_date", today)
+        .order("sort_order"),
+      _getWallpaperInfo(settings, settingsResult.data),
+    ])
 
   if (linksResult.status === "rejected")
     console.error("Error fetching links:", linksResult.reason)
@@ -190,12 +187,6 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     console.error("Error fetching daily tasks:", dailyTasksResult.reason)
   if (wallpaperResult.status === "rejected")
     console.error("Error fetching wallpaper:", wallpaperResult.reason)
-  if (weatherResult.status === "rejected")
-    console.error("Error fetching weather:", weatherResult.reason)
-  if (newsResult.status === "rejected")
-    console.error("Error fetching news:", newsResult.reason)
-  if (stocksResult.status === "rejected")
-    console.error("Error fetching stocks:", stocksResult.reason)
 
   const links =
     linksResult.status === "fulfilled"
@@ -211,10 +202,6 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     wallpaperResult.status === "fulfilled"
       ? wallpaperResult.value
       : { url: "", artist: "", photoUrl: "", isLocked: false }
-  const weather =
-    weatherResult.status === "fulfilled" ? weatherResult.value : null
-  const news = newsResult.status === "fulfilled" ? newsResult.value : null
-  const stocks = stocksResult.status === "fulfilled" ? stocksResult.value : null
 
   const dailyTasks: DailyTaskWithCompletion[] = (
     dailyTasksResultData || []
@@ -227,10 +214,7 @@ export async function getNewTabItems(): Promise<NewTabItems> {
     links,
     settings,
     wallpaper,
-    weather,
     generalTodos,
     dailyTasks,
-    news,
-    stocks,
   }
 }

@@ -77,15 +77,12 @@ export type StockData = {
   urlSymbol: string
 }
 
-export type NewTabItems = {
+export type NewTabCoreData = {
   links: QuickLink[]
   settings: UserSettings
   wallpaper: WallpaperInfo
-  weather: WeatherData | null
   generalTodos: GeneralTodo[]
   dailyTasks: DailyTaskWithCompletion[]
-  news: NewsArticle[] | null
-  stocks: StockData[] | null
 }
 
 export type GeneralTodo = {

@@ -12,16 +12,10 @@ import { NewsSettings } from "./news-settings"
 type NewsWidgetProps = {
   initialNews: NewsArticle[] | null
   initialSettings: UserSettings
-  isExpanded: boolean
-  setIsExpandedAction: (isExpanded: boolean) => void
 }
 
-export function NewsWidget({
-  initialNews,
-  initialSettings,
-  isExpanded,
-  setIsExpandedAction,
-}: NewsWidgetProps) {
+export function NewsWidget({ initialNews, initialSettings }: NewsWidgetProps) {
+  const [isExpanded, setIsExpanded] = React.useState(false)
   const [articles, setArticles] = React.useState(initialNews ?? [])
   const [page, setPage] = React.useState(2)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -91,7 +85,7 @@ export function NewsWidget({
     return (
       <>
         <div
-          onClick={() => setIsExpandedAction(false)}
+          onClick={() => setIsExpanded(false)}
           className="fixed inset-0 z-50 overflow-y-auto bg-black/70 p-4 pt-12 backdrop-blur-sm animate-in fade-in-0 sm:p-6"
         >
           <div
@@ -101,7 +95,7 @@ export function NewsWidget({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsExpandedAction(false)}
+              onClick={() => setIsExpanded(false)}
               className="absolute -top-2 right-0 h-8 w-8 rounded-full text-foreground"
             >
               <X className="h-4 w-4" />
@@ -151,7 +145,7 @@ export function NewsWidget({
 
   return (
     <button
-      onClick={() => setIsExpandedAction(true)}
+      onClick={() => setIsExpanded(true)}
       className="group relative mx-auto mb-0.5 w-full max-w-md cursor-pointer overflow-hidden rounded-lg bg-secondary/50 text-left text-foreground shadow-md backdrop-blur-sm transition-all hover:bg-secondary/75 hover:shadow-lg"
     >
       {firstArticle ? (
