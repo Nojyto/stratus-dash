@@ -6,8 +6,21 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   metadataBase: new URL(absoluteUrl("/")),
-  title: "Stratus Dash",
-  description: "A personal productivity dashboard",
+  title: {
+    default: "Stratus Dash",
+    template: "%s | Stratus Dash",
+  },
+  description:
+    "A personal productivity dashboard that replaces your browser's New Tab page. Features quick access to links, daily tasks, weather, stocks, news, and more.",
+  openGraph: {
+    title: "Stratus Dash - Personal Productivity Dashboard",
+    description:
+      "A fast, modern dashboard for your browser. Manage tasks, view weather & news, track stocks, and write notes all in one place.",
+    type: "website",
+    locale: "en_US",
+    url: new URL(absoluteUrl("/")),
+    siteName: "Stratus Dash",
+  },
 }
 
 const geistSans = Geist({
