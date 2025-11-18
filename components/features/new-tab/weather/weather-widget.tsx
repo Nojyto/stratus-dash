@@ -38,19 +38,19 @@ export function WeatherWidget({
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
-              className="h-16 w-60 cursor-pointer items-center rounded-full bg-secondary/50 p-2 text-left text-foreground backdrop-blur-sm transition-colors hover:bg-secondary/75"
+              className="h-16 w-60 cursor-pointer items-center rounded-full bg-secondary/50 text-left text-foreground backdrop-blur-sm transition-colors hover:bg-secondary/75"
             >
-              <div className="flex h-12 w-12 items-center justify-center">
+              <div className="flex h-12 w-12 items-center justify-center pl-4">
                 <WeatherIcon
                   iconCode={current.icon}
                   description={current.description}
-                  size={28}
+                  className="size-9"
                 />
               </div>
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-1.5">
+              <div className="flex w-48 flex-col pl-0.5 pr-4">
+                <div className="flex w-full items-baseline gap-1.5">
                   <span className="text-2xl font-bold">{current.temp}°</span>
-                  <span className="ml-0.5 overflow-ellipsis whitespace-nowrap text-lg text-muted-foreground first-letter:capitalize">
+                  <span className="ml-0.5 truncate text-lg text-muted-foreground first-letter:capitalize">
                     {current.description}
                   </span>
                 </div>

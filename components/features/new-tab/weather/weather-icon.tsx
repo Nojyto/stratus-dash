@@ -16,12 +16,14 @@ export function WeatherIcon({
   iconCode,
   description,
   size = 28,
+  className,
 }: {
   iconCode: string
   description: string
   size?: number
+  className?: string
 }) {
-  const props = { size, "aria-label": description }
+  const props = { size, "aria-label": description, className }
 
   switch (iconCode) {
     case "01d": // clear sky day
