@@ -35,6 +35,7 @@ function _formatUserSettings(
     news_country: string | null
     news_category: string[] | null
     tracked_stocks: string[] | null
+    calendar_ical_url: string | null
   } | null,
   userId: string
 ): UserSettings {
@@ -50,6 +51,7 @@ function _formatUserSettings(
     news_country: "us",
     news_category: ["general"],
     tracked_stocks: [],
+    calendar_ical_url: null,
   }
 
   if (!dbSettings) {
@@ -69,6 +71,8 @@ function _formatUserSettings(
     news_country: dbSettings.news_country ?? defaults.news_country,
     news_category: dbSettings.news_category ?? defaults.news_category,
     tracked_stocks: dbSettings.tracked_stocks ?? defaults.tracked_stocks,
+    calendar_ical_url:
+      dbSettings.calendar_ical_url ?? defaults.calendar_ical_url,
   }
 }
 
@@ -148,7 +152,7 @@ export async function getNewTabCoreData(): Promise<NewTabCoreData> {
   const settingsResult = await supabase
     .from("user_settings")
     .select(
-      "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon, news_country, news_category, tracked_stocks"
+      "user_id, default_search_engine, wallpaper_url, wallpaper_artist, wallpaper_photo_url, wallpaper_mode, wallpaper_query, gradient_from, gradient_to, weather_lat, weather_lon, news_country, news_category, tracked_stocks, calendar_ical_url"
     )
     .eq("user_id", user.id)
     .maybeSingle()

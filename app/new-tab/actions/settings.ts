@@ -33,6 +33,7 @@ export async function updateNewTabSettings(settings: {
   news_country?: string
   news_category?: string[]
   tracked_stocks?: string[]
+  calendar_ical_url?: string | null
 }) {
   const { user } = await getSupabaseWithUser()
   return _updateUserSettings(user.id, settings)

@@ -25,6 +25,7 @@ export type UserSettings = {
   news_country: string
   news_category: string[]
   tracked_stocks: string[]
+  calendar_ical_url: string | null
 }
 
 export type WallpaperInfo = {
@@ -114,4 +115,17 @@ export type TaskItemType = {
   link: string | null
   is_completed: boolean
   sort_order: number
+}
+
+export type ClientVEvent = {
+  summary: string
+  start: string
+  end: string
+  datetype: "date" | "datetime"
+  tz?: string | null
+  location?: string | null
+  description?: string | null
+  url?: string | null
+  uid: string
+  recurrenceid?: string | null
 }

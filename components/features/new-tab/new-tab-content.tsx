@@ -35,6 +35,7 @@ type NewTabContentProps = {
   weatherWidget: ReactNode
   stockWidgets: ReactNode
   newsWidget: ReactNode
+  calendarWidget: ReactNode
 }
 
 export function NewTabContent({
@@ -47,6 +48,7 @@ export function NewTabContent({
   weatherWidget,
   stockWidgets,
   newsWidget,
+  calendarWidget,
 }: NewTabContentProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [wallpaperMode, setWallpaperMode] = useState(
@@ -115,9 +117,8 @@ export function NewTabContent({
         </div>
 
         {/* === Main Content === */}
-        <div className="flex w-full max-w-7xl flex-1 flex-col items-center gap-8 pt-48 sm:pt-32 xl:flex-row xl:items-start xl:justify-between">
-          <div className="hidden w-64 xl:block"></div>
-          <div className="flex w-full max-w-lg flex-col items-center gap-8">
+        <div className="flex w-full max-w-7xl flex-1 flex-col items-center gap-8 pt-40 sm:pt-32 xl:flex-row xl:items-start xl:justify-between">
+          <div className="flex w-full max-w-lg flex-col items-center gap-8 xl:order-2">
             <ClientOnly fallback={<QuickLinksSkeleton count={skeletonCount} />}>
               <QuickLinksGrid
                 initialLinks={initialLinks}
@@ -130,13 +131,18 @@ export function NewTabContent({
               initialEngine={initialSettings.default_search_engine ?? "google"}
             />
           </div>
-          <div className="w-full max-w-lg xl:w-64">
+
+          <div className="w-full max-w-lg xl:order-3 xl:w-64">
             <ClientOnly fallback={<TaskSkeleton />}>
               <TasksWidget
                 initialDailyTasks={initialDailyTasks}
                 initialGeneralTodos={initialGeneralTodos}
               />
             </ClientOnly>
+          </div>
+
+          <div className="w-full max-w-lg xl:order-1 xl:w-64">
+            {calendarWidget}
           </div>
         </div>
 

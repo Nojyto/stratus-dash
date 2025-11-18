@@ -13,7 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { STOCK_PRESETS } from "@/lib/external/stock-options"
 import type { UserSettings } from "@/types/new-tab"
-import { Settings } from "lucide-react"
+import { Loader2, Settings } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
@@ -64,6 +64,7 @@ export function NewTabSettings({
 }: NewTabSettingsProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [isDisconnecting, startDisconnectTransition] = useTransition()
   const router = useRouter()
 
   const [wallpaperMode, setWallpaperMode] = useState(
@@ -80,6 +81,7 @@ export function NewTabSettings({
   const [trackedStocks, setTrackedStocks] = useState(
     initialSettings.tracked_stocks
   )
+  const [calendarUrl, setCalendarUrl] = useState("")
 
   useEffect(() => {
     onWallpaperModeChangeAction(wallpaperMode)
@@ -87,7 +89,7 @@ export function NewTabSettings({
 
   const handleSettingsSave = () => {
     startTransition(async () => {
-      await updateNewTabSettings({
+      const settingsToUpdate: Parameters<typeof updateNewTabSettings>[0] = {
         wallpaper_mode: wallpaperMode,
         wallpaper_query: wallpaperQuery,
         gradient_from: gradientFrom,
@@ -95,7 +97,13 @@ export function NewTabSettings({
         weather_lat: lat,
         weather_lon: lon,
         tracked_stocks: trackedStocks,
-      })
+      }
+
+      if (calendarUrl) {
+        settingsToUpdate.calendar_ical_url = calendarUrl
+      }
+
+      await updateNewTabSettings(settingsToUpdate)
 
       router.refresh()
     })
@@ -111,6 +119,7 @@ export function NewTabSettings({
       setLat(initialSettings.weather_lat ?? 51.5072)
       setLon(initialSettings.weather_lon ?? -0.1276)
       setTrackedStocks(initialSettings.tracked_stocks)
+      setCalendarUrl("")
     }
     setIsSettingsOpen(open)
     onOpenChangeAction(open)
@@ -126,6 +135,13 @@ export function NewTabSettings({
     })
   }
 
+  const handleDisconnectCalendar = () => {
+    startDisconnectTransition(async () => {
+      await updateNewTabSettings({ calendar_ical_url: null })
+      router.refresh()
+    })
+  }
+
   return (
     <Popover open={isSettingsOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
@@ -134,8 +150,8 @@ export function NewTabSettings({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-80">
-        <div className="grid max-h-[70vh] gap-4 overflow-y-auto pr-2">
+      <PopoverContent className="m-2 w-80 sm:w-96">
+        <div className="grid max-h-[75vh] gap-4 overflow-y-auto pr-2">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Display Settings</h4>
           </div>
@@ -181,6 +197,38 @@ export function NewTabSettings({
               searchPlaceholder="Search stocks..."
               noResultsText="No stock found."
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="calendar-url" className="text-xs">
+              Calendar iCal URL
+            </Label>
+            <Input
+              id="calendar-url"
+              value={calendarUrl}
+              onChange={(e) => setCalendarUrl(e.target.value)}
+              placeholder={
+                initialSettings.calendar_ical_url
+                  ? "Calendar Connected (Enter new to update)"
+                  : "https://.../basic.ics"
+              }
+              className="h-8 text-xs"
+            />
+            {initialSettings.calendar_ical_url && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs text-destructive hover:text-destructive"
+                onClick={handleDisconnectCalendar}
+                disabled={isDisconnecting || isPending}
+              >
+                {isDisconnecting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Disconnect Calendar
+              </Button>
+            )}
           </div>
 
           <div className="grid gap-4">
