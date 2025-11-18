@@ -13,7 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { STOCK_PRESETS } from "@/lib/external/stock-options"
 import type { UserSettings } from "@/types/new-tab"
-import { Loader2, Settings } from "lucide-react"
+import { Loader2, RotateCcw, Settings } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
@@ -62,6 +62,7 @@ export function NewTabSettings({
   onWallpaperModeChangeAction,
   onOpenChangeAction,
 }: NewTabSettingsProps) {
+  const DEFAULT_WALLPAPER_QUERY = "nature landscape wallpaper"
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isDisconnecting, startDisconnectTransition] = useTransition()
@@ -142,6 +143,10 @@ export function NewTabSettings({
     })
   }
 
+  const handleResetQuery = () => {
+    onWallpaperQueryChangeAction(DEFAULT_WALLPAPER_QUERY)
+  }
+
   return (
     <Popover open={isSettingsOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
@@ -171,14 +176,27 @@ export function NewTabSettings({
 
             {wallpaperMode === "image" ? (
               <div className="grid gap-1">
-                <Label htmlFor="wallpaper-query" className="text-xs">
-                  Wallpaper Query
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="wallpaper-query" className="text-xs">
+                    Wallpaper Query
+                  </Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                    onClick={handleResetQuery}
+                    title="Restore default query"
+                  >
+                    <RotateCcw className="mr-1 h-3 w-3" />
+                    Default
+                  </Button>
+                </div>
 
                 <Input
                   id="wallpaper-query"
                   value={wallpaperQuery}
                   onChange={(e) => onWallpaperQueryChangeAction(e.target.value)}
+                  placeholder={DEFAULT_WALLPAPER_QUERY}
                   className="h-8 text-xs"
                 />
               </div>

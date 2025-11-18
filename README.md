@@ -2,7 +2,7 @@
 
 ![Screenshot of the new-tab page](docs/images/new-tab.png)
 
-Stratus Dash is a personal productivity dashboard that replaces your browser's "New Tab" page. It's designed to be fast, and with a modern design, to give you quick access to your most-used links, tasks, weather, stocks, and news.
+Stratus Dash is a personal productivity dashboard that replaces your browser's "New Tab" page. It's designed to be fast, and with a modern design, to give you quick access to your most-used links, tasks, weather, stocks, calendar, and news.
 
 ## Features
 
@@ -22,6 +22,7 @@ Stratus Dash is a personal productivity dashboard that replaces your browser's "
 - **Weather Widget:** Shows the current temperature, high/low, and a simple hourly forecast for any location you set.
 - **News Widget:** Shows the latest top headlines. You can customize the country and news categories in the settings.
 - **Stock Widgt:** Shows the current price of some stocks.
+- **iCal Widget:** Shows the connected calendars daily events.
 - **Theme Controls:**
   - Switch between Light, Dark, and System modes.
   - A "Custom" theme option with an editor to create your own color scheme.

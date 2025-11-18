@@ -51,15 +51,18 @@ export function WallpaperControls({
     })
   }
 
-  const formatArtistName = (name: string) => {
-    if (!name) return null
+  const formatArtistName = (name: string | null) => {
+    if (!name || name === "Local Image") return "Local Image"
+
     const parts = name.split(" ")
     if (parts.length > 1) {
       return `${parts[0][0]}. ${parts.slice(1).join(" ")}`
     }
     return name
   }
+
   const artistName = formatArtistName(wallpaper.artist)
+  const isLocal = artistName === "Local Image"
 
   if (wallpaperMode !== "image") {
     return null
@@ -89,16 +92,22 @@ export function WallpaperControls({
       >
         <Shuffle className="h-4 w-4" />
       </Button>
-      {artistName && (
-        <a
-          href={wallpaper.photoUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-2 rounded-full bg-black/30 px-3 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/50"
-        >
-          Photo by {artistName}
-        </a>
-      )}
+
+      {artistName &&
+        (isLocal ? (
+          <span className="ml-2 cursor-default rounded-full bg-black/30 px-3 py-1 text-xs text-white backdrop-blur-sm">
+            {artistName}
+          </span>
+        ) : (
+          <a
+            href={wallpaper.photoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 rounded-full bg-black/30 px-3 py-1 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/50"
+          >
+            Photo by {artistName}
+          </a>
+        ))}
     </>
   )
 }

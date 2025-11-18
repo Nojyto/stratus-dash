@@ -1,10 +1,13 @@
 "use server"
 
 import type { ClientVEvent } from "@/types/new-tab"
+import { unstable_cache as cache } from "next/cache"
 import type { DateWithTimeZone, VEvent } from "node-ical"
 import * as ical from "node-ical"
 
 const UTC_TIMEZONE_ID = "Etc/UTC"
+const MIN_OFFSET = -4
+const MAX_OFFSET = 14
 
 function buildZonedDate(eventStart: DateWithTimeZone, occurrence: Date): Date {
   const h = eventStart.getHours()
@@ -83,11 +86,11 @@ async function _fetchEventsInRange(icalUrl: string): Promise<ClientVEvent[]> {
 
     const cal = ical.sync.parseICS(icalText)
     const rangeStartLocal = new Date()
-    rangeStartLocal.setDate(rangeStartLocal.getDate() - 30)
+    rangeStartLocal.setDate(rangeStartLocal.getDate() + MIN_OFFSET)
     rangeStartLocal.setHours(0, 0, 0, 0)
 
     const rangeEndLocal = new Date()
-    rangeEndLocal.setDate(rangeEndLocal.getDate() + 60)
+    rangeEndLocal.setDate(rangeEndLocal.getDate() + MAX_OFFSET)
     rangeEndLocal.setHours(23, 59, 59, 999)
 
     const allEvents = Object.values(cal).filter(
@@ -152,9 +155,20 @@ async function _fetchEventsInRange(icalUrl: string): Promise<ClientVEvent[]> {
   }
 }
 
+const getCachedCalendarEvents = cache(
+  async (icalUrl: string) => {
+    return _fetchEventsInRange(icalUrl)
+  },
+  ["calendar-events"],
+  {
+    revalidate: 150,
+    tags: ["calendar"],
+  }
+)
+
 export async function getInitialCalendarEvents(
   icalUrl: string | null
 ): Promise<ClientVEvent[]> {
   if (!icalUrl) return []
-  return _fetchEventsInRange(icalUrl)
+  return getCachedCalendarEvents(icalUrl)
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { formatTimeAgo } from "@/lib/utils"
+import { cn, formatTimeAgo } from "@/lib/utils"
 import type { NewsArticle } from "@/types/new-tab"
-import { Newspaper } from "lucide-react"
+import { Loader2, Newspaper } from "lucide-react"
 import Image from "next/image"
 import { useEffect, useState } from "react"
 
@@ -12,9 +12,11 @@ type NewsArticleCardProps = {
 
 export function NewsArticleCard({ article }: NewsArticleCardProps) {
   const [imgError, setImgError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     setImgError(false)
+    setIsLoading(true)
   }, [article.urlToImage])
 
   return (
@@ -23,7 +25,13 @@ export function NewsArticleCard({ article }: NewsArticleCardProps) {
       className="group flex flex-col overflow-hidden rounded-lg bg-card text-card-foreground shadow-md transition-all hover:shadow-xl"
     >
       {/* Image Container */}
-      <div className="relative h-48 w-full">
+      <div className="relative h-48 w-full bg-secondary/20">
+        {isLoading && !imgError && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/50" />
+          </div>
+        )}
+
         {imgError ? (
           <div className="flex h-full w-full items-center justify-center bg-secondary">
             <Newspaper className="h-16 w-16 text-muted-foreground" />
@@ -33,9 +41,16 @@ export function NewsArticleCard({ article }: NewsArticleCardProps) {
             src={article.urlToImage}
             alt={article.title}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className={cn(
+              "object-cover transition-all duration-500 group-hover:scale-105",
+              isLoading ? "scale-95 opacity-0" : "scale-100 opacity-100"
+            )}
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            onError={() => setImgError(true)}
+            onError={() => {
+              setImgError(true)
+              setIsLoading(false)
+            }}
+            onLoad={() => setIsLoading(false)}
           />
         )}
       </div>

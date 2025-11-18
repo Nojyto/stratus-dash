@@ -10,12 +10,15 @@ import {
   ChevronRight,
   MapPin,
 } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 type CalendarWidgetProps = {
   initialEvents: ClientVEvent[]
   hasCalendar: boolean
 }
+
+const MIN_OFFSET = -4
+const MAX_OFFSET = 14
 
 function formatEventTime(
   startStr: string,
@@ -166,7 +169,7 @@ export function CalendarWidget({
 }: CalendarWidgetProps) {
   const [allEvents] = useState(initialEvents)
   const [dayOffset, setDayOffset] = useState(0)
-  const [now] = useState(new Date())
+  const [now, setNow] = useState<Date | null>(null)
 
   const events = useMemo(() => {
     return filterEventsForDay(allEvents, dayOffset)
@@ -175,6 +178,10 @@ export function CalendarWidget({
   const handleChangeDay = (offset: number) => {
     setDayOffset(offset)
   }
+
+  useEffect(() => {
+    setNow(new Date())
+  }, [])
 
   if (!hasCalendar) {
     return (
@@ -201,6 +208,7 @@ export function CalendarWidget({
               size="icon"
               className="h-7 w-7"
               onClick={() => handleChangeDay(dayOffset - 1)}
+              disabled={dayOffset <= MIN_OFFSET}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -218,6 +226,7 @@ export function CalendarWidget({
               size="icon"
               className="h-7 w-7"
               onClick={() => handleChangeDay(dayOffset + 1)}
+              disabled={dayOffset >= MAX_OFFSET}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -236,7 +245,7 @@ export function CalendarWidget({
                   event.recurrenceid ?? new Date(event.start).getTime()
                 }`}
                 event={event}
-                now={now}
+                now={now ?? new Date(0)}
               />
             ))
           )}
