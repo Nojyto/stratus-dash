@@ -166,6 +166,7 @@ export function TaskItem({
 
       <label
         htmlFor={item.id}
+        title={item.task}
         className={cn(
           "flex-1 cursor-pointer truncate text-sm",
           item.is_completed && "line-through"

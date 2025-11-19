@@ -33,49 +33,48 @@ export function WeatherWidget({
 
   return (
     <Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              className="h-16 w-60 cursor-pointer items-center rounded-full bg-secondary/50 text-left text-foreground backdrop-blur-sm transition-colors hover:bg-secondary/75"
-            >
-              <div className="flex h-12 w-12 items-center justify-center pl-4">
-                <WeatherIcon
-                  iconCode={current.icon}
-                  description={current.description}
-                  className="size-9"
-                />
-              </div>
-              <div className="flex w-48 flex-col pl-0.5 pr-4">
-                <div className="flex w-full items-baseline gap-1.5">
-                  <span className="text-2xl font-bold">{current.temp}°</span>
-                  <span className="ml-0.5 truncate text-lg text-muted-foreground first-letter:capitalize">
-                    {current.description}
-                  </span>
-                </div>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          className="h-16 w-60 cursor-pointer items-center rounded-full bg-secondary/50 text-left text-foreground backdrop-blur-sm transition-colors hover:bg-secondary/75"
+        >
+          <div className="flex h-12 w-12 items-center justify-center pl-4">
+            <WeatherIcon
+              iconCode={current.icon}
+              description={current.description}
+              className="size-9"
+            />
+          </div>
+          <div className="flex w-48 flex-col pl-0.5 pr-4">
+            <div className="flex w-full items-baseline gap-1.5">
+              <span className="text-2xl font-bold">{current.temp}°</span>
+              <span
+                className="ml-0.5 truncate text-lg text-muted-foreground first-letter:capitalize"
+                title={current.description}
+              >
+                {current.description}
+              </span>
+            </div>
 
-                <div className="mt-1 flex items-center gap-2 pr-3 text-xs text-muted-foreground">
-                  <div className="flex items-center" title="High/Low">
-                    {current.max_temp}°/{current.min_temp}°
-                  </div>
-                  <div className="flex items-center" title="Chance of Rain">
-                    <Droplet className="h-3 w-3" />
-                    <span className="ml-0.5">{current.pop}%</span>
-                  </div>
-                  <div className="flex items-center" title="Wind Speed">
-                    <Navigation
-                      className="h-3 w-3"
-                      style={{ transform: `rotate(${current.wind_deg}deg)` }}
-                    />
-                    <span className="ml-0.5">{current.wind_speed} m/s</span>
-                  </div>
-                </div>
+            <div className="mt-1 flex items-center gap-2 pr-3 text-xs text-muted-foreground">
+              <div className="flex items-center" title="High/Low">
+                {current.max_temp}°/{current.min_temp}°
               </div>
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-      </Tooltip>
+              <div className="flex items-center" title="Chance of Rain">
+                <Droplet className="h-3 w-3" />
+                <span className="ml-0.5">{current.pop}%</span>
+              </div>
+              <div className="flex items-center" title="Wind Speed">
+                <Navigation
+                  className="h-3 w-3"
+                  style={{ transform: `rotate(${current.wind_deg}deg)` }}
+                />
+                <span className="ml-0.5">{current.wind_speed} m/s</span>
+              </div>
+            </div>
+          </div>
+        </Button>
+      </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <div className="grid max-h-[50vh] grid-cols-1 overflow-y-auto bg-secondary/50 p-1 backdrop-blur-sm">
           {hourly.map((hour) => (
