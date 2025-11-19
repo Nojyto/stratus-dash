@@ -72,7 +72,9 @@ export function NewsArticleCard({ article }: NewsArticleCardProps) {
           <span className="max-w-[60%] truncate" title={article.author ?? ""}>
             {article.author}
           </span>
-          <span>{formatTimeAgo(article.publishedAt)}</span>
+          <span suppressHydrationWarning>
+            {formatTimeAgo(article.publishedAt)}
+          </span>
         </div>
       </div>
     </a>

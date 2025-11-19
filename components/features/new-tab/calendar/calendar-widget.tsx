@@ -109,6 +109,7 @@ function EventItem({ event, now }: { event: ClientVEvent; now: Date }) {
             {event.summary}
           </p>
           <p
+            suppressHydrationWarning
             className={cn(
               "text-xs",
               isCurrent ? "text-foreground" : "text-muted-foreground"
