@@ -30,6 +30,7 @@ import Image from "next/image"
 import {
   useActionState,
   useEffect,
+  useOptimistic,
   useRef,
   useState,
   useTransition,
@@ -57,6 +58,14 @@ export function TaskItem({
   const [imgError, setImgError] = useState(false)
   const hostname = item.link ? getHostname(item.link) : null
 
+  const [optimisticItem, setOptimisticItem] = useOptimistic(
+    item,
+    (state, newCompletedStatus: boolean) => ({
+      ...state,
+      is_completed: newCompletedStatus,
+    })
+  )
+
   const {
     attributes,
     listeners,
@@ -75,6 +84,7 @@ export function TaskItem({
 
   const handleCheckedChange = (checked: boolean) => {
     startToggleTransition(() => {
+      setOptimisticItem(checked)
       onToggleAction(item.id, checked)
     })
   }
@@ -149,7 +159,7 @@ export function TaskItem({
       style={style}
       className={cn(
         "group relative flex w-full items-center gap-1 rounded-md p-0.5 transition-colors hover:bg-secondary/75",
-        item.is_completed && "opacity-60"
+        optimisticItem.is_completed && "opacity-60"
       )}
     >
       <button {...attributes} {...listeners} className="cursor-grab p-1">
@@ -158,9 +168,9 @@ export function TaskItem({
 
       <Checkbox
         id={item.id}
-        checked={item.is_completed}
+        checked={optimisticItem.is_completed}
         onCheckedChange={handleCheckedChange}
-        disabled={isTogglePending || isQuickDeletePending}
+        disabled={isQuickDeletePending}
         className="mx-1"
       />
 
@@ -169,7 +179,7 @@ export function TaskItem({
         title={item.task}
         className={cn(
           "flex-1 cursor-pointer truncate text-sm",
-          item.is_completed && "line-through"
+          optimisticItem.is_completed && "line-through"
         )}
       >
         {item.task}
@@ -195,7 +205,7 @@ export function TaskItem({
           )}
         </a>
       )}
-      {item.is_completed && taskType === "general" && (
+      {optimisticItem.is_completed && taskType === "general" && (
         <Button
           variant="ghost"
           size="icon"
