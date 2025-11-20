@@ -20,6 +20,7 @@ const eslintConfig = [
       "next-env.d.ts",
       "tailwind.config.ts",
       "postcss.config.ts",
+      "public/sw.js",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),

@@ -2,6 +2,7 @@
 
 import type { NewsArticle } from "@/types/new-tab"
 import { unstable_cache as cache } from "next/cache"
+import { env } from "../env"
 
 type NewsApiArticle = {
   source: {
@@ -33,12 +34,7 @@ export const getNews = cache(
     categories: string[],
     page: number
   ): Promise<NewsArticle[] | null> => {
-    const apiKey = process.env.NEWS_API_KEY
-    if (!apiKey) {
-      console.error("NEWS_API_KEY is not set.")
-      return null
-    }
-
+    const apiKey = env.NEWS_API_KEY
     const validCategories =
       Array.isArray(categories) && categories.length > 0
         ? categories

@@ -1,5 +1,6 @@
 "use server"
 
+import { env } from "@/lib/env"
 import { createClient } from "@/lib/supabase/server"
 import { absoluteUrl } from "@/lib/utils"
 import { FormState } from "@/types/new-tab"
@@ -39,26 +40,11 @@ const UpdatePasswordSchema = z.object({
 async function _validateSignupEmail(
   email: string
 ): Promise<{ error: string } | null> {
-  const restrictSignup = process.env.RESTRICT_SIGNUP === "true"
-  if (!restrictSignup) {
+  if (!env.RESTRICT_SIGNUP) {
     return null
   }
 
-  const allowedEmailsEnv = process.env.ALLOWED_EMAILS
-  if (!allowedEmailsEnv) {
-    console.error(
-      "SIGNUP ERROR: RESTRICT_SIGNUP is true, but no ALLOWED_EMAILS list is provided in .env"
-    )
-    return {
-      error: "Sign-up is currently disabled. Please contact an administrator.",
-    }
-  }
-
-  const allowedEmails = allowedEmailsEnv
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-
-  if (!email || !allowedEmails.includes(email.toLowerCase())) {
+  if (!email || !env.ALLOWED_EMAILS.includes(email.toLowerCase())) {
     return {
       error:
         "Sign-up is restricted. Please contact an administrator for access.",

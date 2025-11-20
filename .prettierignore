@@ -19,3 +19,6 @@ yarn.lock
 
 # Supabase generated types (if applicable)
 types/supabase.ts
+
+# Service worker file
+public/sw.js

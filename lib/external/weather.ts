@@ -2,6 +2,7 @@
 
 import type { WeatherData } from "@/types/new-tab"
 import { unstable_cache as cache } from "next/cache"
+import { env } from "../env"
 
 type OpenWeatherForecastItem = {
   dt: number
@@ -17,12 +18,7 @@ type OpenWeatherForecastItem = {
 
 export const getWeatherForCoords = cache(
   async (lat: number, lon: number): Promise<WeatherData | null> => {
-    const apiKey = process.env.OPENWEATHER_API_KEY
-    if (!apiKey) {
-      console.error("OPENWEATHER_API_KEY is not set.")
-      return null
-    }
-
+    const apiKey = env.OPENWEATHER_API_KEY
     const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
 

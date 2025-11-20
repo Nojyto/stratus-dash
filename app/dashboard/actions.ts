@@ -31,7 +31,6 @@ export async function getDashboardItems(): Promise<DashboardItems> {
   }
 }
 
-// _deleteItem is simple and generic enough to be shared
 async function _deleteItem(
   supabase: SupabaseClient,
   table: "notes" | "folders",

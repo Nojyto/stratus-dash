@@ -2,6 +2,7 @@
 
 import type { StockData } from "@/types/new-tab"
 import { unstable_cache as cache } from "next/cache"
+import { env } from "../env"
 import { STOCK_PRESETS } from "./stock-options"
 
 type FinnhubQuote = {
@@ -15,10 +16,8 @@ type FinnhubQuote = {
   t: number
 }
 
-async function fetchStockQuote(
-  symbol: string,
-  apiKey: string
-): Promise<StockData | null> {
+async function fetchStockQuote(symbol: string): Promise<StockData | null> {
+  const apiKey = env.STOCK_API_KEY
   const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`
 
   try {
@@ -59,19 +58,11 @@ async function fetchStockQuote(
 
 export const getStockData = cache(
   async (symbols: string[]): Promise<StockData[] | null> => {
-    const apiKey = process.env.STOCK_API_KEY
-    if (!apiKey) {
-      console.error("STOCK_API_KEY is not set.")
-      return null
-    }
-
     if (!Array.isArray(symbols) || symbols.length === 0) {
       return []
     }
 
-    const stockPromises = symbols.map((symbol) =>
-      fetchStockQuote(symbol, apiKey)
-    )
+    const stockPromises = symbols.map((symbol) => fetchStockQuote(symbol))
     const results = await Promise.all(stockPromises)
 
     return results.filter((stock): stock is StockData => stock !== null)
