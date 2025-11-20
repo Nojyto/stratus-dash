@@ -1,5 +1,5 @@
 import { absoluteUrl } from "@/lib/utils"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { ThemeProvider } from "next-themes"
 import { Geist } from "next/font/google"
 import "./globals.css"
@@ -21,6 +21,14 @@ export const metadata: Metadata = {
     url: new URL(absoluteUrl("/")),
     siteName: "Stratus Dash",
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#171717",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 const geistSans = Geist({

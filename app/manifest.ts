@@ -3,12 +3,13 @@ import type { MetadataRoute } from "next"
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Stratus Dash",
-    short_name: "Stratus Dash",
+    short_name: "Stratus",
     description: "A personal productivity dashboard",
     start_url: "/",
     display: "standalone",
-    background_color: "#fff",
+    background_color: "#171717",
     theme_color: "#171717",
+    id: "stratus-dash-app",
     icons: [
       {
         src: "/favicon.ico",
