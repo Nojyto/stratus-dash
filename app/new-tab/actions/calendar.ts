@@ -1,6 +1,7 @@
 "use server"
 
 import type { ClientVEvent } from "@/types/new-tab"
+import { fromZonedTime, toZonedTime } from "date-fns-tz"
 import { unstable_cache as cache } from "next/cache"
 import type { DateWithTimeZone, VEvent } from "node-ical"
 import * as ical from "node-ical"
@@ -10,16 +11,22 @@ const MIN_OFFSET = -4
 const MAX_OFFSET = 14
 
 function buildZonedDate(eventStart: DateWithTimeZone, occurrence: Date): Date {
-  const h = eventStart.getHours()
-  const m = eventStart.getMinutes()
-  const s = eventStart.getSeconds()
+  const tz = eventStart.tz
+  const effectiveTz = tz ?? UTC_TIMEZONE_ID
+
+  const zonedStart = toZonedTime(eventStart, effectiveTz)
+  const h = zonedStart.getHours()
+  const m = zonedStart.getMinutes()
+  const s = zonedStart.getSeconds()
+  const ms = zonedStart.getMilliseconds()
 
   const y = occurrence.getFullYear()
   const mo = occurrence.getMonth()
   const d = occurrence.getDate()
 
-  const result = new Date(y, mo, d, h, m, s)
-  return result
+  const dateInEventTz = new Date(y, mo, d, h, m, s, ms)
+
+  return fromZonedTime(dateInEventTz, effectiveTz)
 }
 
 function _toClientVEvent(
@@ -28,23 +35,22 @@ function _toClientVEvent(
   occurrenceDate?: Date
 ): ClientVEvent | null {
   let start: Date
+  let end: Date
 
   if (isRecurring) {
     start = buildZonedDate(event.start as DateWithTimeZone, occurrenceDate!)
+
+    const durationMs = event.end.getTime() - event.start.getTime()
+    end = new Date(start.getTime() + durationMs)
   } else {
     start = event.start
+    end = event.end
   }
 
   if (!start || isNaN(start.getTime())) {
     console.error("Invalid start date generated for event:", event)
     return null
   }
-  if (isNaN(start.getTime())) {
-    console.error("Invalid recurring start", { event, occurrenceDate })
-  }
-
-  const durationMs = event.end.getTime() - event.start.getTime()
-  const end = new Date(start.getTime() + durationMs)
 
   const tz = (event.start as DateWithTimeZone).tz
   const finalTz = tz === UTC_TIMEZONE_ID || tz === undefined ? null : tz
@@ -101,30 +107,22 @@ async function _fetchEventsInRange(icalUrl: string): Promise<ClientVEvent[]> {
     const modifiedEventKeys = new Set<string>()
 
     for (const event of allEvents) {
-      if (!event.rrule && event.recurrenceid) {
+      if (!event.rrule || event.recurrenceid) {
         const eventStart = event.start
         const eventEnd: DateWithTimeZone | Date = event.end
           ? event.end
           : event.start
 
         if (eventStart <= rangeEndLocal && eventEnd >= rangeStartLocal) {
-          const eventKey = `${event.uid}-${event.recurrenceid.getTime()}`
-          modifiedEventKeys.add(eventKey)
+          if (event.recurrenceid) {
+            const eventKey = `${event.uid}-${event.recurrenceid.getTime()}`
+            modifiedEventKeys.add(eventKey)
+          }
 
           if (event.status !== "CANCELLED") {
             const clientEvent = _toClientVEvent(event, false)
             if (clientEvent) eventsInRange.push(clientEvent)
           }
-        }
-      } else if (!event.rrule && !event.recurrenceid) {
-        const eventStart = event.start
-        const eventEnd: DateWithTimeZone | Date = event.end
-          ? event.end
-          : event.start
-
-        if (eventStart <= rangeEndLocal && eventEnd >= rangeStartLocal) {
-          const clientEvent = _toClientVEvent(event, false)
-          if (clientEvent) eventsInRange.push(clientEvent)
         }
       }
     }
