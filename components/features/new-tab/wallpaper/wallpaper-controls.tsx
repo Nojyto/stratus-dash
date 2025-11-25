@@ -6,22 +6,22 @@ import {
   unlockWallpaper,
 } from "@/app/new-tab/actions/settings"
 import { Button } from "@/components/ui/button"
-import type { WallpaperInfo } from "@/types/new-tab"
+import { useNewTab } from "@/contexts/NewTabContext"
+import { WallpaperInfo } from "@/types/new-tab"
 import { Lock, Shuffle, Unlock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 
-type WallpaperControlsProps = {
-  initialWallpaper: WallpaperInfo
-  wallpaperQuery: string
-  wallpaperMode: "image" | "gradient"
-}
+export function WallpaperControls() {
+  const {
+    wallpaper: initialWallpaper,
+    settings,
+    updateWallpaperInfo,
+  } = useNewTab()
 
-export function WallpaperControls({
-  initialWallpaper,
-  wallpaperQuery,
-  wallpaperMode,
-}: WallpaperControlsProps) {
+  const wallpaperQuery = settings.wallpaper_query
+  const wallpaperMode = settings.wallpaper_mode
+
   const [wallpaper, setWallpaper] = useState(initialWallpaper)
   const [isLocked, setIsLocked] = useState(initialWallpaper.isLocked)
   const [isWallpaperPending, startWallpaperTransition] = useTransition()
@@ -41,12 +41,28 @@ export function WallpaperControls({
 
   const handleToggleLockWallpaper = () => {
     startWallpaperTransition(async () => {
+      let result: { success: boolean; error?: string }
+      let newIsLocked: boolean
+      let newWallpaperInfo: WallpaperInfo
+
       if (isLocked) {
-        await unlockWallpaper()
-        setIsLocked(false)
+        result = await unlockWallpaper()
+        newIsLocked = false
+        newWallpaperInfo = { ...wallpaper, isLocked: false }
       } else {
-        await lockWallpaper(wallpaper.url, wallpaper.artist, wallpaper.photoUrl)
-        setIsLocked(true)
+        result = await lockWallpaper(
+          wallpaper.url,
+          wallpaper.artist,
+          wallpaper.photoUrl
+        )
+        newIsLocked = true
+        newWallpaperInfo = { ...wallpaper, isLocked: true }
+      }
+
+      if (result.success) {
+        setIsLocked(newIsLocked)
+        updateWallpaperInfo(newWallpaperInfo)
+        router.refresh()
       }
     })
   }

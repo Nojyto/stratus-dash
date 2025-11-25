@@ -13,7 +13,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import type { FormState, QuickLink } from "@/types/new-tab"
+import { useNewTab } from "@/contexts/NewTabContext"
+import type { FormState } from "@/types/new-tab"
 import {
   DndContext,
   KeyboardSensor,
@@ -37,16 +38,9 @@ import {
 } from "react"
 import { QuickLinkItem } from "./quick-link-item"
 
-type QuickLinksGridProps = {
-  initialLinks: QuickLink[]
-  isEditing: boolean
-  userId: string
-}
+export function QuickLinksGrid() {
+  const { links: initialLinks, isEditing, updateLinks } = useNewTab()
 
-export function QuickLinksGrid({
-  initialLinks,
-  isEditing,
-}: QuickLinksGridProps) {
   const [links, setLinks] = useState(initialLinks)
   const [, startTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
@@ -67,6 +61,10 @@ export function QuickLinksGrid({
       formRef.current?.reset()
     }
   }, [state])
+
+  useEffect(() => {
+    updateLinks(links)
+  }, [links, updateLinks])
 
   const didDragEnd = useRef(false)
   const sensors = useSensors(

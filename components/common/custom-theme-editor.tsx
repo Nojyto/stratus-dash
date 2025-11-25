@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
+import { useNewTab } from "@/contexts/NewTabContext"
 import {
   applyCustomTheme,
   applySavedTheme,
@@ -35,6 +36,7 @@ export function CustomThemeEditor({
   const [mounted, setMounted] = useState(false)
   const { theme } = useTheme()
   const [popoverOpen, setPopoverOpen] = useState(false)
+  const { updateSettings } = useNewTab()
 
   const [customColors, setCustomColors] = useState<ColorTheme>({})
   const [defaultStyles, setDefaultStyles] = useState<ColorTheme>({})
@@ -100,6 +102,10 @@ export function CustomThemeEditor({
         applySavedTheme()
       }
       updateNewTabSettings({
+        gradient_from: customColors["--gradient-from"],
+        gradient_to: customColors["--gradient-to"],
+      })
+      updateSettings({
         gradient_from: customColors["--gradient-from"],
         gradient_to: customColors["--gradient-to"],
       })

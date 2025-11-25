@@ -5,6 +5,7 @@ import { CustomThemeEditor } from "@/components/common/custom-theme-editor"
 import { ThemeSwitcher } from "@/components/common/theme-switcher"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { NewTabProvider, useNewTab } from "@/contexts/NewTabContext"
 import { cn } from "@/lib/utils"
 import type {
   DailyTaskWithCompletion,
@@ -15,7 +16,7 @@ import type {
 } from "@/types/new-tab"
 import { Edit } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useState, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
 import { QuickLinksSkeleton } from "./quick-links/quick-links-skeleton"
@@ -38,48 +39,50 @@ type NewTabContentProps = {
   calendarWidget: ReactNode
 }
 
-export function NewTabContent({
-  initialLinks,
-  initialSettings,
-  initialWallpaper,
+export function NewTabContent(props: NewTabContentProps) {
+  return (
+    <NewTabProvider
+      initialLinks={props.initialLinks}
+      initialSettings={props.initialSettings}
+      initialWallpaper={props.initialWallpaper}
+      initialGeneralTodos={props.initialGeneralTodos}
+      initialDailyTasks={props.initialDailyTasks}
+    >
+      <NewTabLayout {...props} />
+    </NewTabProvider>
+  )
+}
+
+function NewTabLayout({
   authButton,
-  initialGeneralTodos,
-  initialDailyTasks,
   weatherWidget,
   stockWidgets,
   newsWidget,
   calendarWidget,
 }: NewTabContentProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [wallpaperMode, setWallpaperMode] = useState(
-    initialSettings.wallpaper_mode
-  )
-  const [wallpaperQuery, setWallpaperQuery] = useState(
-    initialSettings.wallpaper_query
-  )
+  const {
+    links,
+    settings,
+    wallpaper,
+    generalTodos,
+    dailyTasks,
+    isEditing,
+    isUIVisible,
+    setIsEditing,
+    setUIVisibility,
+  } = useNewTab()
+
   const { theme } = useTheme()
 
-  const [isHovering, setIsHovering] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isCustomThemeEditorOpen, setIsCustomThemeEditorOpen] = useState(false)
-
-  const isVisible =
-    isHovering ||
-    isMenuOpen ||
-    isEditing ||
-    isSettingsOpen ||
-    isCustomThemeEditorOpen
-
-  const skeletonCount = initialLinks.length > 0 ? initialLinks.length : 5
+  const skeletonCount = links.length > 0 ? links.length : 5
 
   return (
     <TooltipProvider delayDuration={300}>
       <BackgroundManager
-        wallpaperMode={wallpaperMode}
-        wallpaperUrl={initialWallpaper.url}
-        gradientFrom={initialSettings.gradient_from ?? "220 70% 50%"}
-        gradientTo={initialSettings.gradient_to ?? "280 65% 60%"}
+        wallpaperMode={settings.wallpaper_mode}
+        wallpaperUrl={wallpaper.url}
+        gradientFrom={settings.gradient_from ?? "220 70% 50%"}
+        gradientTo={settings.gradient_to ?? "280 65% 60%"}
         theme={theme}
       />
 
@@ -93,10 +96,10 @@ export function NewTabContent({
         <div
           className={cn(
             "absolute right-4 top-24 flex flex-col items-end gap-1 opacity-0 transition-opacity delay-300 duration-300 sm:right-6 sm:top-6 sm:flex-row",
-            isVisible && "opacity-100 delay-0 duration-0"
+            isUIVisible && "opacity-100 delay-0 duration-0"
           )}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
+          onMouseEnter={() => setUIVisibility(true, false, false, false)}
+          onMouseLeave={() => setUIVisibility(false, false, false, false)}
         >
           <Button
             variant={isEditing ? "default" : "ghost"}
@@ -108,11 +111,17 @@ export function NewTabContent({
           </Button>
 
           <CustomThemeEditor
-            onOpenChangeAction={setIsCustomThemeEditorOpen}
-            initialGradientFrom={initialSettings.gradient_from}
-            initialGradientTo={initialSettings.gradient_to}
+            onOpenChangeAction={(open) =>
+              setUIVisibility(false, open, false, open)
+            }
+            initialGradientFrom={settings.gradient_from}
+            initialGradientTo={settings.gradient_to}
           />
-          <ThemeSwitcher onOpenChangeAction={setIsMenuOpen} />
+          <ThemeSwitcher
+            onOpenChangeAction={(open) =>
+              setUIVisibility(false, open, false, false)
+            }
+          />
           {authButton}
         </div>
 
@@ -120,23 +129,19 @@ export function NewTabContent({
         <div className="flex w-full max-w-7xl flex-1 flex-col items-center gap-8 pt-40 sm:pt-32 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex w-full max-w-lg flex-col items-center gap-8 xl:order-2">
             <ClientOnly fallback={<QuickLinksSkeleton count={skeletonCount} />}>
-              <QuickLinksGrid
-                initialLinks={initialLinks}
-                isEditing={isEditing}
-                userId={initialSettings.user_id}
-              />
+              <QuickLinksGrid />
             </ClientOnly>
 
             <SearchBar
-              initialEngine={initialSettings.default_search_engine ?? "google"}
+              initialEngine={settings.default_search_engine ?? "duckduckgo"}
             />
           </div>
 
           <div className="w-full max-w-lg xl:order-3 xl:w-64">
             <ClientOnly fallback={<TaskSkeleton />}>
               <TasksWidget
-                initialDailyTasks={initialDailyTasks}
-                initialGeneralTodos={initialGeneralTodos}
+                initialDailyTasks={dailyTasks}
+                initialGeneralTodos={generalTodos}
               />
             </ClientOnly>
           </div>
@@ -153,24 +158,17 @@ export function NewTabContent({
         <div
           className={cn(
             "absolute bottom-6 left-4 right-4 flex items-center justify-center gap-1 opacity-0 transition-opacity delay-300 duration-300 sm:left-6 sm:right-auto sm:justify-start",
-            isVisible && "opacity-100 delay-0 duration-0"
+            isUIVisible && "opacity-100 delay-0 duration-0"
           )}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
+          onMouseEnter={() => setUIVisibility(true, false, false, false)}
+          onMouseLeave={() => setUIVisibility(false, false, false, false)}
         >
           <NewTabSettings
-            initialSettings={initialSettings}
-            wallpaperQuery={wallpaperQuery}
-            onWallpaperQueryChangeAction={setWallpaperQuery}
-            onWallpaperModeChangeAction={setWallpaperMode}
-            onOpenChangeAction={setIsSettingsOpen}
+            onOpenChangeAction={(open) =>
+              setUIVisibility(false, false, open, false)
+            }
           />
-
-          <WallpaperControls
-            initialWallpaper={initialWallpaper}
-            wallpaperQuery={wallpaperQuery}
-            wallpaperMode={wallpaperMode}
-          />
+          <WallpaperControls />
         </div>
       </div>
     </TooltipProvider>

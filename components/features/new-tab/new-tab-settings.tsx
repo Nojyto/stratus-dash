@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
+import { useNewTab } from "@/contexts/NewTabContext"
 import { STOCK_PRESETS } from "@/lib/external/stock-options"
 import type { UserSettings } from "@/types/new-tab"
 import { Loader2, RotateCcw, Settings } from "lucide-react"
@@ -48,28 +49,24 @@ const LocationPicker = dynamic(
 )
 
 type NewTabSettingsProps = {
-  initialSettings: UserSettings
-  wallpaperQuery: string
-  onWallpaperQueryChangeAction: (query: string) => void
-  onWallpaperModeChangeAction: (mode: "image" | "gradient") => void
   onOpenChangeAction: (open: boolean) => void
 }
 
-export function NewTabSettings({
-  initialSettings,
-  wallpaperQuery,
-  onWallpaperQueryChangeAction,
-  onWallpaperModeChangeAction,
-  onOpenChangeAction,
-}: NewTabSettingsProps) {
+export function NewTabSettings({ onOpenChangeAction }: NewTabSettingsProps) {
+  const { settings: initialSettings, updateSettings } = useNewTab()
+
   const DEFAULT_WALLPAPER_QUERY = "nature landscape wallpaper"
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const router = useRouter()
+
   const [isPending, startTransition] = useTransition()
   const [isDisconnecting, startDisconnectTransition] = useTransition()
-  const router = useRouter()
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const [wallpaperMode, setWallpaperMode] = useState(
     initialSettings.wallpaper_mode
+  )
+  const [wallpaperQuery, setWallpaperQuery] = useState(
+    initialSettings.wallpaper_query
   )
   const [gradientFrom, setGradientFrom] = useState(
     initialSettings.gradient_from ?? "220 70% 50%"
@@ -85,8 +82,14 @@ export function NewTabSettings({
   const [calendarUrl, setCalendarUrl] = useState("")
 
   useEffect(() => {
-    onWallpaperModeChangeAction(wallpaperMode)
-  }, [wallpaperMode, onWallpaperModeChangeAction])
+    setWallpaperMode(initialSettings.wallpaper_mode)
+    setWallpaperQuery(initialSettings.wallpaper_query)
+    setGradientFrom(initialSettings.gradient_from ?? "220 70% 50%")
+    setGradientTo(initialSettings.gradient_to ?? "280 65% 60%")
+    setLat(initialSettings.weather_lat ?? 51.5072)
+    setLon(initialSettings.weather_lon ?? -0.1276)
+    setTrackedStocks(initialSettings.tracked_stocks)
+  }, [initialSettings])
 
   const handleSettingsSave = () => {
     startTransition(async () => {
@@ -106,6 +109,8 @@ export function NewTabSettings({
 
       await updateNewTabSettings(settingsToUpdate)
 
+      updateSettings(settingsToUpdate as Partial<UserSettings>)
+
       router.refresh()
     })
     setIsSettingsOpen(false)
@@ -114,7 +119,7 @@ export function NewTabSettings({
   const handleOpenChange = (open: boolean) => {
     if (!open && !isPending) {
       setWallpaperMode(initialSettings.wallpaper_mode)
-      onWallpaperQueryChangeAction(initialSettings.wallpaper_query)
+      setWallpaperQuery(initialSettings.wallpaper_query)
       setGradientFrom(initialSettings.gradient_from ?? "220 70% 50%")
       setGradientTo(initialSettings.gradient_to ?? "280 65% 60%")
       setLat(initialSettings.weather_lat ?? 51.5072)
@@ -139,12 +144,13 @@ export function NewTabSettings({
   const handleDisconnectCalendar = () => {
     startDisconnectTransition(async () => {
       await updateNewTabSettings({ calendar_ical_url: null })
+      updateSettings({ calendar_ical_url: null })
       router.refresh()
     })
   }
 
   const handleResetQuery = () => {
-    onWallpaperQueryChangeAction(DEFAULT_WALLPAPER_QUERY)
+    setWallpaperQuery(DEFAULT_WALLPAPER_QUERY)
   }
 
   return (
@@ -168,7 +174,7 @@ export function NewTabSettings({
               <Switch
                 id="wallpaper-mode"
                 checked={wallpaperMode === "image"}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setWallpaperMode(checked ? "image" : "gradient")
                 }
               />
@@ -195,7 +201,9 @@ export function NewTabSettings({
                 <Input
                   id="wallpaper-query"
                   value={wallpaperQuery}
-                  onChange={(e) => onWallpaperQueryChangeAction(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setWallpaperQuery(e.target.value)
+                  }
                   placeholder={DEFAULT_WALLPAPER_QUERY}
                   className="h-8 text-xs"
                 />
@@ -224,7 +232,9 @@ export function NewTabSettings({
             <Input
               id="calendar-url"
               value={calendarUrl}
-              onChange={(e) => setCalendarUrl(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setCalendarUrl(e.target.value)
+              }
               placeholder={
                 initialSettings.calendar_ical_url
                   ? "Calendar Connected (Enter new to update)"
