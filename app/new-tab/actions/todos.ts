@@ -37,7 +37,11 @@ async function _createTask(
     .single()
 
   if (error) {
-    return { error: error.message }
+    console.error(
+      `[DB Action] Error creating task for table ${table}:`,
+      error.message
+    )
+    return { error: "Failed to create task due to a database error." }
   }
   return { success: true, data: data }
 }
@@ -64,7 +68,11 @@ async function _updateTask(
     .single()
 
   if (error) {
-    return { error: error.message }
+    console.error(
+      `[DB Action] Error updating task for table ${table}:`,
+      error.message
+    )
+    return { error: "Failed to update task due to a database error." }
   }
   return { success: true, data: data }
 }
@@ -74,7 +82,11 @@ async function _deleteTask(id: string, table: TodoTable): Promise<FormState> {
   const { error } = await supabase.from(table).delete().eq("id", id)
 
   if (error) {
-    return { error: error.message }
+    console.error(
+      `[DB Action] Error deleting task for table ${table}:`,
+      error.message
+    )
+    return { error: "Failed to delete task due to a database error." }
   }
   return { success: true }
 }
@@ -101,7 +113,10 @@ export async function toggleGeneralTodo(id: string, is_completed: boolean) {
     .update({ is_completed })
     .eq("id", id)
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error(`[DB Action] Error toggling general todo:`, error.message)
+    return { error: "Failed to update task status due to a database error." }
+  }
   return { success: true }
 }
 
@@ -145,7 +160,13 @@ export async function toggleDailyTask(taskId: string, isCompleted: boolean) {
         ignoreDuplicates: true,
       }
     )
-    if (error) return { error: error.message }
+    if (error) {
+      console.error(
+        `[DB Action] Error inserting daily task completion:`,
+        error.message
+      )
+      return { error: "Failed to mark task complete due to a database error." }
+    }
   } else {
     const { error } = await supabase
       .from("daily_task_completions")
@@ -153,7 +174,15 @@ export async function toggleDailyTask(taskId: string, isCompleted: boolean) {
       .eq("task_id", taskId)
       .eq("user_id", user.id)
       .eq("completed_date", today)
-    if (error) return { error: error.message }
+    if (error) {
+      console.error(
+        `[DB Action] Error deleting daily task completion:`,
+        error.message
+      )
+      return {
+        error: "Failed to unmark task complete due to a database error.",
+      }
+    }
   }
   return { success: true }
 }

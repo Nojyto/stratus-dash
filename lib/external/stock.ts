@@ -24,7 +24,7 @@ async function fetchStockQuote(symbol: string): Promise<StockData | null> {
     const res = await fetch(url)
     if (!res.ok) {
       console.error(
-        `Failed to fetch stock data for ${symbol}: ${res.statusText}`
+        `[External API: Finnhub] Failed to fetch data for ${symbol}: ${res.statusText}`
       )
       return null
     }
@@ -49,7 +49,7 @@ async function fetchStockQuote(symbol: string): Promise<StockData | null> {
     }
   } catch (e) {
     console.error(
-      `Error fetching or parsing stock data for ${symbol}:`,
+      `[External API: Finnhub] Error fetching or parsing data for ${symbol}:`,
       e instanceof Error ? e.message : String(e)
     )
     return null

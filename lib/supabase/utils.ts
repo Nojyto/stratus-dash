@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
 export async function getSupabaseWithUser() {
   const supabase = await createClient()
@@ -9,7 +10,7 @@ export async function getSupabaseWithUser() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    throw new Error("User not authenticated")
+    redirect("/auth/login")
   }
 
   return { supabase, user }
@@ -55,10 +56,11 @@ export async function updateSortOrder(
   const firstError = results.find((res) => res.error)
 
   if (firstError) {
-    console.error(`Error updating ${table} order:`, firstError.error)
-    const errorMessage =
-      firstError.error?.message ?? "An unknown database error occurred"
-    return { success: false, error: errorMessage }
+    console.error(`[DB Util] Error updating ${table} order:`, firstError.error)
+    return {
+      success: false,
+      error: "Failed to update item order due to a database error.",
+    }
   }
 
   return { success: true }

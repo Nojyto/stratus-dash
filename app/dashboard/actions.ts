@@ -15,10 +15,10 @@ export async function getDashboardItems(): Promise<DashboardItems> {
     ])
 
     if (notesResult.error) {
-      console.error("Error fetching notes:", notesResult.error)
+      console.error("[DB Action] Error fetching notes:", notesResult.error)
     }
     if (foldersResult.error) {
-      console.error("Error fetching folders:", foldersResult.error)
+      console.error("[DB Action] Error fetching folders:", foldersResult.error)
     }
 
     return {
@@ -26,7 +26,7 @@ export async function getDashboardItems(): Promise<DashboardItems> {
       folders: (foldersResult.data as Folder[]) ?? [],
     }
   } catch (error) {
-    console.error("Error in getDashboardItems:", error)
+    console.error("[DB Action] Error in getDashboardItems:", error)
     return { notes: [], folders: [] }
   }
 }
@@ -39,7 +39,7 @@ async function _deleteItem(
   const { error } = await supabase.from(table).delete().eq("id", id)
 
   if (error) {
-    console.error(`Error deleting ${table}:`, error)
+    console.error(`[DB Action] Error deleting ${table}:`, error)
     return { success: false }
   }
   revalidatePath("/dashboard")
@@ -63,7 +63,7 @@ export async function createNote(
     .single()
 
   if (error) {
-    console.error(`Error creating note:`, error)
+    console.error(`[DB Action] Error creating note:`, error)
     return null
   }
   revalidatePath("/dashboard")
@@ -83,7 +83,7 @@ export async function updateNote(
     .single()
 
   if (error) {
-    console.error(`Error updating note:`, error)
+    console.error(`[DB Action] Error updating note:`, error)
     return null
   }
   revalidatePath("/dashboard")
@@ -106,7 +106,7 @@ export async function createFolder(
     .single()
 
   if (error) {
-    console.error(`Error creating folder:`, error)
+    console.error(`[DB Action] Error creating folder:`, error)
     return null
   }
   revalidatePath("/dashboard")
@@ -126,7 +126,7 @@ export async function updateFolder(
     .single()
 
   if (error) {
-    console.error(`Error updating folder:`, error)
+    console.error(`[DB Action] Error updating folder:`, error)
     return null
   }
   revalidatePath("/dashboard")

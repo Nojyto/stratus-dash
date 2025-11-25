@@ -73,6 +73,7 @@ export async function login(
   })
 
   if (error) {
+    console.error("[Auth Action: login] Supabase error:", error.message)
     return { error: error.message }
   }
 
@@ -106,6 +107,7 @@ export async function signup(
   })
 
   if (error) {
+    console.error("[Auth Action: signup] Supabase error:", error.message)
     return { error: error.message }
   }
 
@@ -132,6 +134,10 @@ export async function forgotPassword(
   })
 
   if (error) {
+    console.error(
+      "[Auth Action: forgotPassword] Supabase error:",
+      error.message
+    )
     return { error: error.message }
   }
 
@@ -156,6 +162,10 @@ export async function updatePassword(
   const { error } = await supabase.auth.updateUser({ password })
 
   if (error) {
+    console.error(
+      "[Auth Action: updatePassword] Supabase error:",
+      error.message
+    )
     return { error: error.message }
   }
 

@@ -65,7 +65,10 @@ export const getNews = cache(
         const data: NewsApiResponse = await res.json()
 
         if (data.status !== "ok") {
-          console.error("News API returned non-ok status:", data.message)
+          console.error(
+            "[External API: News] returned non-ok status:",
+            data.message
+          )
           continue
         }
 
@@ -107,7 +110,7 @@ export const getNews = cache(
       return formattedArticles
     } catch (e) {
       console.error(
-        "Error fetching or parsing news data:",
+        "[External API: News] Error fetching or parsing data:",
         e instanceof Error ? e.message : String(e)
       )
       return null

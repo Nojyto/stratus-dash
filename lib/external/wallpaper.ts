@@ -23,7 +23,7 @@ export async function fetchFreshRandomWallpaper(
     })
 
     if (result.errors || !result.response) {
-      console.warn("Unsplash API Error:", result.errors)
+      console.warn("[External API: Unsplash] API Error:", result.errors)
       return {
         url: FALLBACK_WALLPAPER_URL,
         artist: FALLBACK_ARTIST,
@@ -42,7 +42,7 @@ export async function fetchFreshRandomWallpaper(
     }
   } catch (e) {
     console.warn(
-      "Failed to fetch from Unsplash, returning fallback. Error:",
+      "[External API: Unsplash] Failed to fetch, returning fallback. Error:",
       e instanceof Error ? e.message : String(e)
     )
     return {

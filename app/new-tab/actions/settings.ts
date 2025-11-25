@@ -18,7 +18,13 @@ async function _updateUserSettings(
     { onConflict: "user_id" }
   )
 
-  if (error) return { success: false, error: error.message }
+  if (error) {
+    console.error("[DB Action] Error updating user settings:", error.message)
+    return {
+      success: false,
+      error: "Failed to save settings due to a database error.",
+    }
+  }
   revalidatePath("/new-tab")
   return { success: true }
 }

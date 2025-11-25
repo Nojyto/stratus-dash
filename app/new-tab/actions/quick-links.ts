@@ -32,7 +32,8 @@ export async function createQuickLink(
   })
 
   if (error) {
-    return { error: error.message }
+    console.error(`[DB Action] Error creating quick link:`, error.message)
+    return { error: "Failed to create link due to a database error." }
   }
   revalidatePath("/new-tab")
   return { success: true }
@@ -60,7 +61,8 @@ export async function updateQuickLink(
     .eq("id", id)
 
   if (error) {
-    return { error: error.message }
+    console.error(`[DB Action] Error updating quick link:`, error.message)
+    return { error: "Failed to update link due to a database error." }
   }
   revalidatePath("/new-tab")
   return { success: true }
@@ -71,7 +73,8 @@ export async function deleteQuickLink(id: string): Promise<FormState> {
   const { error } = await supabase.from("quick_links").delete().eq("id", id)
 
   if (error) {
-    return { error: error.message }
+    console.error(`[DB Action] Error deleting quick link:`, error.message)
+    return { error: "Failed to delete link due to a database error." }
   }
   revalidatePath("/new-tab")
   return { success: true }
