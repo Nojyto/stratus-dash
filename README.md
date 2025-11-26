@@ -21,7 +21,7 @@ Stratus Dash is a personal productivity dashboard that replaces your browser's "
   - Both lists support adding, editing, deleting, and re-ordering.
 - **Weather Widget:** Shows the current temperature, high/low, and a simple hourly forecast for any location you set.
 - **News Widget:** Shows the latest top headlines. You can customize the country and news categories in the settings.
-- **Stock Widgt:** Shows the current price of some stocks.
+- **Stock Widget:** Shows the current price of some stocks.
 - **iCal Widget:** Shows the connected calendars daily events.
 - **Theme Controls:**
   - Switch between Light, Dark, and System modes.
