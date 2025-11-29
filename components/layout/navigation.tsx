@@ -8,25 +8,37 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { Menu, MonitorPlay, NotebookPen } from "lucide-react"
+import { Menu, MonitorPlay, NotebookPen, Play } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-const routes = [
-  {
-    href: "/dashboard",
-    label: "Notes",
-    icon: NotebookPen,
-  },
-  {
-    href: "/new-tab",
-    label: "New Tab",
-    icon: MonitorPlay,
-  },
-]
+type NavigationProps = {
+  isLoggedIn: boolean
+}
 
-export function Navigation() {
+export function Navigation({ isLoggedIn }: NavigationProps) {
   const pathname = usePathname()
+
+  const routes = isLoggedIn
+    ? [
+        {
+          href: "/new-tab",
+          label: "New Tab",
+          icon: MonitorPlay,
+        },
+        {
+          href: "/dashboard",
+          label: "Notes",
+          icon: NotebookPen,
+        },
+      ]
+    : [
+        {
+          href: "/demo",
+          label: "Try Demo",
+          icon: Play,
+        },
+      ]
 
   return (
     <>

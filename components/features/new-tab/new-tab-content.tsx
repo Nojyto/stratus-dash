@@ -38,6 +38,7 @@ type NewTabContentProps = {
   stockWidgets: ReactNode
   newsWidget: ReactNode
   calendarWidget: ReactNode
+  isDemo?: boolean
 }
 
 export function NewTabContent(props: NewTabContentProps) {
@@ -48,6 +49,7 @@ export function NewTabContent(props: NewTabContentProps) {
       initialWallpaper={props.initialWallpaper}
       initialGeneralTodos={props.initialGeneralTodos}
       initialDailyTasks={props.initialDailyTasks}
+      isDemo={props.isDemo}
     >
       <NewTabLayout {...props} />
     </NewTabProvider>
@@ -60,6 +62,7 @@ function NewTabLayout({
   stockWidgets,
   newsWidget,
   calendarWidget,
+  isDemo,
 }: NewTabContentProps) {
   const {
     links,
@@ -86,6 +89,13 @@ function NewTabLayout({
         gradientTo={settings.gradient_to ?? "280 65% 60%"}
         theme={theme}
       />
+
+      {/* Demo Banner */}
+      {isDemo && (
+        <div className="font-sm fixed top-0 z-50 flex w-full justify-center bg-primary px-4 py-0.5 text-xs text-primary-foreground">
+          Demo Mode — Data is mocked and changes will not be saved.
+        </div>
+      )}
 
       {/* === Top === */}
       <div className="relative z-10 flex min-h-screen w-full flex-col items-center gap-8 p-4 sm:p-6">

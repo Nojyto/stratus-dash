@@ -22,6 +22,7 @@ export type NewTabContextType = {
   // UI State
   isEditing: boolean
   isUIVisible: boolean
+  isDemo: boolean
 
   // State Updaters
   setIsEditing: React.Dispatch<React.SetStateAction<boolean>>
@@ -52,9 +53,7 @@ const useUIVisibility = () => {
 
   useEffect(() => {
     if (!isMenuOpen && theme === "custom") {
-      // Re-apply saved theme properties if needed after closing the theme editor
-      // Logic for this is already handled inside CustomThemeEditor's onOpenChange,
-      // but keeping this hook simple for visibility management.
+      // Re-apply logic handled in CustomThemeEditor
     }
   }, [isMenuOpen, theme])
 
@@ -88,6 +87,7 @@ export function NewTabProvider({
   initialWallpaper,
   initialGeneralTodos,
   initialDailyTasks,
+  isDemo = false,
 }: {
   children: React.ReactNode
   initialLinks: QuickLink[]
@@ -95,6 +95,7 @@ export function NewTabProvider({
   initialWallpaper: WallpaperInfo
   initialGeneralTodos: GeneralTodo[]
   initialDailyTasks: DailyTaskWithCompletion[]
+  isDemo?: boolean
 }) {
   const [links, setLinks] = useState(initialLinks)
   const [settings, setSettings] = useState(initialSettings)
@@ -143,6 +144,7 @@ export function NewTabProvider({
       dailyTasks,
       isEditing,
       isUIVisible: isVisible,
+      isDemo,
       setIsEditing,
       updateLinks,
       updateWallpaperInfo,
@@ -157,6 +159,7 @@ export function NewTabProvider({
       dailyTasks,
       isEditing,
       isVisible,
+      isDemo,
       updateLinks,
       updateWallpaperInfo,
       updateSettings,

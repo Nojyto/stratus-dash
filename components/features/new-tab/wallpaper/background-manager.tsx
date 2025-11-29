@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation"
 import { useEffect, useRef } from "react"
 
+const ALLOWED_WALLPAPER_PATHS = ["/new-tab", "/demo"]
+
 type BackgroundManagerProps = {
   wallpaperMode: "image" | "gradient"
   wallpaperUrl: string
@@ -20,6 +22,7 @@ export function BackgroundManager({
 }: BackgroundManagerProps) {
   const appliedWallpaperUrl = useRef<string | null>(null)
   const pathname = usePathname()
+  const isAllowedPath = ALLOWED_WALLPAPER_PATHS.includes(pathname)
 
   const cleanupStyles = () => {
     document.body.classList.remove(
@@ -33,16 +36,16 @@ export function BackgroundManager({
   }
 
   useEffect(() => {
-    if (pathname !== "/new-tab") {
+    if (!isAllowedPath) {
       cleanupStyles()
     }
-  }, [pathname])
+  }, [isAllowedPath])
 
   useEffect(() => {
     let img: HTMLImageElement | null = null
     let timer: NodeJS.Timeout | null = null
 
-    if (pathname !== "/new-tab") {
+    if (!isAllowedPath) {
       cleanupStyles()
       return
     }
@@ -64,7 +67,8 @@ export function BackgroundManager({
         img = new Image()
         img.src = wallpaperUrl
         img.onload = () => {
-          if (window.location.pathname !== "/new-tab") return
+          if (!ALLOWED_WALLPAPER_PATHS.includes(window.location.pathname))
+            return
 
           appliedWallpaperUrl.current = wallpaperUrl
           document.documentElement.style.setProperty(
@@ -111,7 +115,14 @@ export function BackgroundManager({
       }
       cleanupStyles()
     }
-  }, [wallpaperUrl, wallpaperMode, gradientFrom, gradientTo, theme, pathname])
+  }, [
+    wallpaperUrl,
+    wallpaperMode,
+    gradientFrom,
+    gradientTo,
+    theme,
+    isAllowedPath,
+  ])
 
   return null
 }

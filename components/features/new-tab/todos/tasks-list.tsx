@@ -17,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { useNewTab } from "@/contexts/NewTabContext"
 import type {
   DailyTask,
   FormState,
@@ -55,6 +56,7 @@ type TasksListProps = {
 }
 
 export function TasksList({ initialItems, taskType, title }: TasksListProps) {
+  const { isDemo } = useNewTab()
   const [items, setItems] = useState(initialItems)
   const [, startTransition] = useTransition()
   const [popoverOpen, setPopoverOpen] = useState(false)
@@ -109,9 +111,11 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
     setItems((prev) =>
       prev.map((t) => (t.id === id ? { ...t, is_completed: isCompleted } : t))
     )
-    startTransition(async () => {
-      await toggleAction(id, isCompleted)
-    })
+    if (!isDemo) {
+      startTransition(async () => {
+        await toggleAction(id, isCompleted)
+      })
+    }
   }
 
   const handleDelete = (id: string) => {
@@ -132,11 +136,13 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
         tolerance: 10,
       },
     }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   )
 
   useEffect(() => {
-    if (!didDragEnd.current) return
+    if (!didDragEnd.current || isDemo) return
     didDragEnd.current = false
     const itemsToUpdate = items.map((item, index) => ({
       id: item.id,
@@ -145,7 +151,7 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
     startTransition(async () => {
       await updateOrderAction(itemsToUpdate)
     })
-  }, [items, updateOrderAction])
+  }, [items, updateOrderAction, isDemo])
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -163,37 +169,39 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
     <div className="flex flex-col overflow-x-hidden">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-medium">{title}</h3>
-        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <form ref={formRef} action={formAction} className="grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium leading-none">Add {title}</h4>
-              </div>
+        {!isDemo && (
+          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <form ref={formRef} action={formAction} className="grid gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Add {title}</h4>
+                </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="task">Task</Label>
-                <Input id="task" name="task" required />
-              </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="task">Task</Label>
+                  <Input id="task" name="task" required />
+                </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="link">Link (Optional)</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="link">Link (Optional)</Label>
 
-                <Input id="link" name="link" placeholder="example.com" />
-              </div>
+                  <Input id="link" name="link" placeholder="example.com" />
+                </div>
 
-              {state?.error && (
-                <p className="text-sm text-red-500">{state.error}</p>
-              )}
+                {state?.error && (
+                  <p className="text-sm text-red-500">{state.error}</p>
+                )}
 
-              <SubmitButton pendingText="Adding...">Add Task</SubmitButton>
-            </form>
-          </PopoverContent>
-        </Popover>
+                <SubmitButton pendingText="Adding...">Add Task</SubmitButton>
+              </form>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       <DndContext
@@ -215,9 +223,7 @@ export function TasksList({ initialItems, taskType, title }: TasksListProps) {
                 />
               ))
             ) : (
-              <p className="p-2 text-xs text-muted-foreground">
-                No tasks yet. Click the + to add one.
-              </p>
+              <p className="p-2 text-xs text-muted-foreground">No tasks yet.</p>
             )}
           </div>
         </SortableContext>

@@ -39,7 +39,7 @@ import {
 import { QuickLinkItem } from "./quick-link-item"
 
 export function QuickLinksGrid() {
-  const { links: initialLinks, isEditing, updateLinks } = useNewTab()
+  const { links: initialLinks, isEditing, updateLinks, isDemo } = useNewTab()
 
   const [links, setLinks] = useState(initialLinks)
   const [, startTransition] = useTransition()
@@ -80,7 +80,7 @@ export function QuickLinksGrid() {
 
   // Update link order on server after drag
   useEffect(() => {
-    if (!didDragEnd.current) {
+    if (!didDragEnd.current || isDemo) {
       return
     }
     didDragEnd.current = false
@@ -91,7 +91,7 @@ export function QuickLinksGrid() {
     startTransition(async () => {
       await updateLinkOrder(linksToUpdate)
     })
-  }, [links, startTransition])
+  }, [links, startTransition, isDemo])
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -116,18 +116,20 @@ export function QuickLinksGrid() {
               link={link}
               isEditing={isEditing}
               tabIndex={i}
-              onDeleteAction={(id) =>
+              onDeleteAction={(id) => {
+                if (isDemo) return
                 setLinks(links.filter((l) => l.id !== id))
-              }
-              onUpdateAction={(updatedLink) =>
+              }}
+              onUpdateAction={(updatedLink) => {
+                if (isDemo) return
                 setLinks(
                   links.map((l) => (l.id === updatedLink.id ? updatedLink : l))
                 )
-              }
+              }}
             />
           ))}
 
-          {isEditing && (
+          {isEditing && !isDemo && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <div className="flex w-20 flex-col items-center gap-1.5">
