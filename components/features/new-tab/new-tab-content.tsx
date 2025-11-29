@@ -14,8 +14,9 @@ import type {
   UserSettings,
   WallpaperInfo,
 } from "@/types/new-tab"
-import { Edit } from "lucide-react"
+import { Edit, Home } from "lucide-react"
 import { useTheme } from "next-themes"
+import Link from "next/link"
 import { type ReactNode } from "react"
 import { NewTabSettings } from "./new-tab-settings"
 import { QuickLinksGrid } from "./quick-links/quick-links-grid"
@@ -101,6 +102,17 @@ function NewTabLayout({
           onMouseEnter={() => setUIVisibility(true, false, false, false)}
           onMouseLeave={() => setUIVisibility(false, false, false, false)}
         >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            asChild
+          >
+            <Link href="/">
+              <Home className="h-4 w-4" />
+            </Link>
+          </Button>
+
           <Button
             variant={isEditing ? "default" : "ghost"}
             size="icon"

@@ -77,7 +77,7 @@ export async function login(
     return { error: error.message }
   }
 
-  return redirect("/protected")
+  return redirect("/")
 }
 
 export async function signup(
@@ -102,7 +102,7 @@ export async function signup(
     email,
     password,
     options: {
-      emailRedirectTo: absoluteUrl("/auth/confirm?next=/protected"),
+      emailRedirectTo: absoluteUrl("/auth/confirm?next=/"),
     },
   })
 
@@ -169,7 +169,7 @@ export async function updatePassword(
     return { error: error.message }
   }
 
-  return redirect("/protected")
+  return redirect("/")
 }
 
 export async function logout() {

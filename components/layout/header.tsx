@@ -2,17 +2,24 @@ import { Notebook } from "lucide-react"
 import Link from "next/link"
 import { AuthButton } from "../common/auth-button"
 import { ThemeSwitcher } from "../common/theme-switcher"
+import { Navigation } from "./navigation"
 
 export function Header() {
   return (
-    <nav className="flex h-12 w-full justify-center border-b border-b-foreground/10">
+    <nav className="sticky top-0 z-50 flex h-14 w-full justify-center border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="flex w-full max-w-7xl items-center justify-between px-5 py-3 text-sm">
-        <div className="flex items-center gap-1 font-semibold">
-          <Link href={"/"}>
+        <div className="flex items-center gap-6">
+          <Link
+            href={"/"}
+            className="flex items-center gap-2 font-semibold transition-opacity hover:opacity-80"
+          >
             <Notebook />
+            <span>Stratus Dash</span>
           </Link>
-          <Link href={"/"}>Stratus Dash</Link>
+
+          <Navigation />
         </div>
+
         <div className="flex items-center gap-2">
           <ThemeSwitcher />
           <AuthButton />
