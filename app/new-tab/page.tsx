@@ -1,4 +1,3 @@
-import { AuthButton } from "@/components/common/auth-button"
 import { CalendarLoader } from "@/components/features/new-tab/calendar/calendar-loader"
 import { CalendarSkeleton } from "@/components/features/new-tab/calendar/calendar-skeleton"
 import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
@@ -22,7 +21,6 @@ export default async function NewTabPage() {
       initialWallpaper={wallpaper}
       initialGeneralTodos={generalTodos}
       initialDailyTasks={dailyTasks}
-      authButton={<AuthButton />}
       weatherWidget={
         <Suspense fallback={<WeatherSkeleton />}>
           <WeatherLoader settings={settings} />

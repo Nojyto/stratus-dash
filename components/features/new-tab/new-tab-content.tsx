@@ -33,7 +33,6 @@ type NewTabContentProps = {
   initialWallpaper: WallpaperInfo
   initialGeneralTodos: GeneralTodo[]
   initialDailyTasks: DailyTaskWithCompletion[]
-  authButton: ReactNode
   weatherWidget: ReactNode
   stockWidgets: ReactNode
   newsWidget: ReactNode
@@ -57,7 +56,6 @@ export function NewTabContent(props: NewTabContentProps) {
 }
 
 function NewTabLayout({
-  authButton,
   weatherWidget,
   stockWidgets,
   newsWidget,
@@ -123,15 +121,6 @@ function NewTabLayout({
             </Link>
           </Button>
 
-          <Button
-            variant={isEditing ? "default" : "ghost"}
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-
           <CustomThemeEditor
             onOpenChangeAction={(open) =>
               setUIVisibility(false, open, false, open)
@@ -144,7 +133,6 @@ function NewTabLayout({
               setUIVisibility(false, open, false, false)
             }
           />
-          {authButton}
         </div>
 
         {/* === Main Content === */}
@@ -190,6 +178,15 @@ function NewTabLayout({
               setUIVisibility(false, false, open, false)
             }
           />
+          <Button
+            variant={isEditing ? "default" : "ghost"}
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+
           <WallpaperControls />
         </div>
       </div>

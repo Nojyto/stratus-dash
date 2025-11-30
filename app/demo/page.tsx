@@ -1,4 +1,3 @@
-import { AuthButton } from "@/components/common/auth-button"
 import { CalendarWidget } from "@/components/features/new-tab/calendar/calendar-widget"
 import { NewTabContent } from "@/components/features/new-tab/new-tab-content"
 import { NewsWidget } from "@/components/features/new-tab/news/news-widget"
@@ -26,7 +25,6 @@ export default function DemoPage() {
       initialWallpaper={DEMO_WALLPAPER}
       initialGeneralTodos={DEMO_GENERAL_TODOS}
       initialDailyTasks={DEMO_DAILY_TASKS}
-      authButton={<AuthButton />}
       weatherWidget={<WeatherWidget initialData={DEMO_WEATHER} />}
       stockWidgets={<StockWidgets initialData={DEMO_STOCKS} />}
       newsWidget={
