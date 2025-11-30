@@ -63,7 +63,7 @@ export function NoteEditor({ note, setNotesAction }: NoteEditorProps) {
     setContent(note?.content || "")
   }, [note])
 
-  const editorExtensions = useMemo(() => {
+  const extensions = useMemo(() => {
     return [
       markdown({
         base: markdownLanguage,
@@ -76,22 +76,26 @@ export function NoteEditor({ note, setNotesAction }: NoteEditorProps) {
 
   if (!note) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="flex h-full items-center justify-center bg-background text-muted-foreground">
         Select a note to start editing
       </div>
     )
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full bg-background">
       <div className="absolute right-4 top-2 z-10">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-muted"
+            >
               <Settings size={16} />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64">
+          <PopoverContent className="w-64" align="end">
             <div className="grid gap-4">
               <h4 className="font-medium leading-none">Editor Settings</h4>
               <div className="flex items-center justify-between">
@@ -99,7 +103,7 @@ export function NoteEditor({ note, setNotesAction }: NoteEditorProps) {
                 <Switch
                   id="line-numbers"
                   checked={settings.lineNumbers}
-                  onCheckedChange={(checked: boolean) =>
+                  onCheckedChange={(checked) =>
                     setSettings((s) => ({ ...s, lineNumbers: checked }))
                   }
                 />
@@ -109,7 +113,7 @@ export function NoteEditor({ note, setNotesAction }: NoteEditorProps) {
                 <Switch
                   id="wysiwyg-mode"
                   checked={settings.wysiwyg}
-                  onCheckedChange={(checked: boolean) =>
+                  onCheckedChange={(checked) =>
                     setSettings((s) => ({ ...s, wysiwyg: checked }))
                   }
                 />
@@ -122,16 +126,18 @@ export function NoteEditor({ note, setNotesAction }: NoteEditorProps) {
       <CodeMirror
         value={content}
         onChange={onChange}
-        extensions={editorExtensions}
+        extensions={extensions}
         theme={resolvedTheme === "dark" ? darkTheme : lightTheme}
         height="100%"
-        className="h-full"
+        className="h-full text-base"
+        placeholder="Start writing..."
         basicSetup={{
           lineNumbers: settings.lineNumbers,
           foldGutter: false,
           autocompletion: false,
           highlightActiveLine: false,
           highlightActiveLineGutter: false,
+          drawSelection: true,
         }}
       />
     </div>

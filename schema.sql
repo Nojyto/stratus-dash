@@ -120,7 +120,8 @@ CREATE TABLE
     name text NOT NULL,
     parent_id uuid REFERENCES public.folders (id) ON DELETE CASCADE, -- Self-referencing
     user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-    created_at timestamp with time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now(),
+    color text DEFAULT '#FFFFFF'::text
   );
 
 -- Enable RLS

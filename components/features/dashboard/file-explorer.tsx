@@ -13,157 +13,332 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { Input } from "@/components/ui/input"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import type { Folder, Note } from "@/types/dashboard"
 import {
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import {
   ChevronRight,
-  Edit,
   File,
   Folder as FolderIcon,
+  FolderOpen,
   FolderPlus,
+  Palette,
   PanelLeft,
   PanelRight,
+  Pencil,
   Plus,
   Trash2,
 } from "lucide-react"
-import type { JSX } from "react"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
+
+const FOLDER_COLORS = [
+  { label: "Blue", value: "text-blue-500", bg: "bg-blue-500" },
+  { label: "Red", value: "text-red-500", bg: "bg-red-500" },
+  { label: "Green", value: "text-green-500", bg: "bg-green-500" },
+  { label: "Yellow", value: "text-yellow-500", bg: "bg-yellow-500" },
+  { label: "Purple", value: "text-purple-500", bg: "bg-purple-500" },
+  { label: "Gray", value: "text-slate-500", bg: "bg-slate-500" },
+  { label: "Orange", value: "text-orange-500", bg: "bg-orange-500" },
+]
 
 type FileExplorerProps = {
   notes: Note[]
   folders: Folder[]
   selectedNote: Note | null
+  sidebarPosition: "left" | "right"
   onSelectNoteAction: (note: Note | null) => void
   setNotesAction: React.Dispatch<React.SetStateAction<Note[]>>
   setFoldersAction: React.Dispatch<React.SetStateAction<Folder[]>>
-  onLayoutChangeAction: (layout: "horizontal" | "vertical") => void
+  onToggleSidebarPositionAction: () => void
 }
 
 type TreeItem = (Folder & { is_folder: true }) | (Note & { is_folder: false })
 
-const MAX_FOLDER_DEPTH = 5
-
-type FileExplorerItemProps = {
-  item: TreeItem
-  isSelected: boolean
-  isExpanded: boolean
-  onToggleFolder: (folderId: string) => void
-  onSelectNote: (note: Note) => void
-  onRename: (item: TreeItem, newName: string) => Promise<void>
-  onDelete: (item: TreeItem) => Promise<void>
-  children: React.ReactNode
+function isDescendant(
+  folders: Folder[],
+  sourceId: string,
+  targetId: string
+): boolean {
+  if (sourceId === targetId) return true
+  const target = folders.find((f) => f.id === targetId)
+  if (!target || !target.parent_id) return false
+  if (target.parent_id === sourceId) return true
+  return isDescendant(folders, sourceId, target.parent_id)
 }
 
-function FileExplorerItem({
+function ExplorerItem({
   item,
   isSelected,
   isExpanded,
-  onToggleFolder,
-  onSelectNote,
+  onToggle,
+  onSelect,
   onRename,
   onDelete,
+  onCreate,
+  onChangeColor,
   children,
-}: FileExplorerItemProps) {
+  isOverlay = false,
+}: {
+  item: TreeItem
+  isSelected: boolean
+  isExpanded: boolean
+  onToggle: (id: string) => void
+  onSelect: (item: TreeItem) => void
+  onRename: (item: TreeItem, name: string) => Promise<void>
+  onDelete: (item: TreeItem) => Promise<void>
+  onCreate: (type: "note" | "folder", parentId: string) => void
+  onChangeColor: (id: string, color: string) => void
+  children?: React.ReactNode
+  isOverlay?: boolean
+}) {
   const [isEditing, setIsEditing] = useState(false)
-  const [newName, setNewName] = useState(
-    item.is_folder ? item.name : item.title
+  const [name, setName] = useState(item.is_folder ? item.name : item.title)
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({
+    id: item.id,
+    data: item,
+    disabled: isEditing,
+  })
+
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: item.id,
+    data: item,
+    disabled: !item.is_folder || isDragging || isEditing,
+  })
+
+  const setRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDragRef(node)
+      if (item.is_folder) setDropRef(node)
+    },
+    [setDragRef, setDropRef, item.is_folder]
   )
 
-  const title = item.is_folder ? item.name : item.title
-
-  const handleRename = () => {
-    setIsEditing(true)
-    setNewName(title)
-  }
-
-  const handleSaveRename = async () => {
-    if (newName.trim() === "" || newName === title) {
-      setIsEditing(false)
-      return
-    }
-    await onRename(item, newName)
+  const handleSubmit = async () => {
+    if (!name.trim()) return setIsEditing(false)
+    await onRename(item, name)
     setIsEditing(false)
   }
 
-  const handleClick = () => {
-    if (item.is_folder) {
-      onToggleFolder(item.id)
-    } else {
-      onSelectNote(item)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSubmit()
+    if (e.key === "Escape") {
+      setName(item.is_folder ? item.name : item.title)
+      setIsEditing(false)
     }
   }
 
-  return (
-    <div className="ml-4">
-      <div
-        className={cn(
-          "group relative flex cursor-pointer items-center justify-between rounded p-1",
-          isSelected && "bg-accent"
-        )}
-        onClick={handleClick}
-      >
-        {isEditing ? (
-          <Input
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onBlur={handleSaveRename}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSaveRename()
-              if (e.key === "Escape") setIsEditing(false)
-            }}
-            onClick={(e) => e.stopPropagation()}
-            autoFocus
-            className="h-7"
-          />
-        ) : (
-          <div className="flex items-center gap-2 truncate">
-            {item.is_folder ? (
-              <>
-                <ChevronRight
-                  size={16}
-                  className={cn(
-                    "flex-shrink-0 transition-transform",
-                    isExpanded && "rotate-90"
-                  )}
-                />
-                <FolderIcon size={16} className="flex-shrink-0" />
-              </>
+  useEffect(() => {
+    if (!isSelected || isEditing) return
+
+    const handleShortcut = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+
+      if (e.key === "F2") {
+        e.preventDefault()
+        setIsEditing(true)
+      }
+
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault()
+        onDelete(item)
+      }
+    }
+
+    window.addEventListener("keydown", handleShortcut)
+    return () => window.removeEventListener("keydown", handleShortcut)
+  }, [isSelected, isEditing, item, onDelete])
+
+  const folderColorClass =
+    item.is_folder && item.color ? item.color : "text-blue-500"
+
+  const content = (
+    <div
+      ref={isOverlay ? undefined : setRef}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors",
+        isSelected && "bg-accent font-medium text-accent-foreground",
+        !isSelected && "hover:bg-accent hover:text-accent-foreground",
+        isDragging && "opacity-50",
+        isOver && "inset-0 bg-primary/20 ring-1 ring-primary"
+      )}
+      onClick={(e) => {
+        e.stopPropagation()
+        if (isEditing) return
+        if (item.is_folder) {
+          onSelect(item)
+          onToggle(item.id)
+        } else {
+          onSelect(item)
+        }
+      }}
+    >
+      {item.is_folder ? (
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            isExpanded && "rotate-90"
+          )}
+        />
+      ) : (
+        <span className="w-4" />
+      )}
+
+      {isEditing ? (
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={handleSubmit}
+          onKeyDown={handleKeyDown}
+          className="h-6 px-1 py-0 text-xs"
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <div className="flex items-center gap-2 truncate">
+          {item.is_folder ? (
+            isExpanded ? (
+              <FolderOpen className={cn("h-4 w-4", folderColorClass)} />
             ) : (
-              <File size={16} className="ml-4 flex-shrink-0" />
-            )}
-            <span className="truncate">{title}</span>
-          </div>
-        )}
-        <div className="absolute right-0 top-1/2 flex -translate-y-1/2 bg-background opacity-0 group-hover:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleRename()
-            }}
-          >
-            <Edit size={14} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete(item)
-            }}
-          >
-            <Trash2 size={14} />
-          </Button>
+              <FolderIcon className={cn("h-4 w-4", folderColorClass)} />
+            )
+          ) : (
+            <File className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="truncate">{name}</span>
         </div>
-      </div>
-      {item.is_folder && isExpanded && children}
+      )}
+    </div>
+  )
+
+  if (isOverlay) return content
+
+  return (
+    <div>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{content}</ContextMenuTrigger>
+        <ContextMenuContent>
+          {item.is_folder && (
+            <>
+              <ContextMenuItem onSelect={() => onCreate("note", item.id)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Note
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={() => onCreate("folder", item.id)}>
+                <FolderPlus className="mr-2 h-4 w-4" />
+                New Folder
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  <Palette className="mr-2 h-4 w-4" />
+                  Color
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  <ContextMenuRadioGroup value={folderColorClass}>
+                    {FOLDER_COLORS.map((c) => (
+                      <ContextMenuRadioItem
+                        key={c.value}
+                        value={c.value}
+                        onSelect={() => onChangeColor(item.id, c.value)}
+                      >
+                        <div
+                          className={cn(
+                            "mr-2 h-3 w-3 rounded-full border border-border",
+                            c.bg
+                          )}
+                        />
+                        {c.label}
+                      </ContextMenuRadioItem>
+                    ))}
+                  </ContextMenuRadioGroup>
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+              <ContextMenuSeparator />
+            </>
+          )}
+          <ContextMenuItem onSelect={() => setIsEditing(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Rename
+            <ContextMenuShortcut>F2</ContextMenuShortcut>
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            onSelect={() => onDelete(item)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+            <ContextMenuShortcut>⌫</ContextMenuShortcut>
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      {item.is_folder && isExpanded && (
+        <div className="ml-4 border-l pl-1">{children}</div>
+      )}
+    </div>
+  )
+}
+
+function RootDropZone({ children }: { children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: "root-zone",
+    data: { is_folder: true, id: "root-zone", name: "Root" },
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "min-h-[150px] flex-1 overflow-y-auto rounded-md transition-colors",
+        isOver && "bg-primary/5 ring-1 ring-primary/50"
+      )}
+    >
+      {children}
     </div>
   )
 }
@@ -172,173 +347,376 @@ export function FileExplorer({
   notes,
   folders,
   selectedNote,
+  sidebarPosition,
   onSelectNoteAction,
   setNotesAction,
   setFoldersAction,
-  onLayoutChangeAction,
+  onToggleSidebarPositionAction,
 }: FileExplorerProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+  const [activeDragItem, setActiveDragItem] = useState<TreeItem | null>(null)
+  const [mounted, setMounted] = useState(false)
 
-  const handleCreate = async (isFolder: boolean) => {
-    let parentFolderId: string | null = null
-    if (selectedNote?.folder_id) {
-      parentFolderId = selectedNote.folder_id
-    }
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  )
 
-    if (isFolder) {
-      const newFolder = await createFolder({
-        name: "New Folder",
-        parent_id: parentFolderId,
-      })
-      if (newFolder) {
-        setFoldersAction((prev) => [...prev, newFolder])
-        if (parentFolderId) {
-          setExpandedFolders((prev) => new Set(prev).add(parentFolderId!))
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleCreate = useCallback(
+    async (type: "note" | "folder", explicitParentId?: string) => {
+      const parentId = explicitParentId ?? selectedFolderId
+
+      if (type === "folder") {
+        const newFolder = await createFolder({
+          name: "New Folder",
+          parent_id: parentId,
+        })
+        if (newFolder) {
+          setFoldersAction((prev) => [...prev, newFolder])
+          if (parentId) {
+            setExpandedFolders((prev) => new Set(prev).add(parentId))
+          }
         }
-      }
-    } else {
-      const newNote = await createNote({
-        title: "New Note",
-        folder_id: parentFolderId,
-      })
-      if (newNote) {
-        setNotesAction((prev) => [...prev, newNote])
-        if (parentFolderId) {
-          setExpandedFolders((prev) => new Set(prev).add(parentFolderId!))
-        }
-        onSelectNoteAction(newNote)
-      }
-    }
-  }
-
-  const handleDelete = async (item: TreeItem) => {
-    if (item.is_folder) {
-      await deleteFolder(item.id)
-      setFoldersAction((prev) => prev.filter((f) => f.id !== item.id))
-    } else {
-      await deleteNote(item.id)
-      setNotesAction((prev) => prev.filter((n) => n.id !== item.id))
-    }
-
-    if (selectedNote?.id === item.id) {
-      onSelectNoteAction(null)
-    }
-  }
-
-  const handleRename = async (item: TreeItem, newName: string) => {
-    if (item.is_folder) {
-      const updated = await updateFolder(item.id, { name: newName })
-      if (updated) {
-        setFoldersAction((prev) =>
-          prev.map((f) => (f.id === updated.id ? updated : f))
-        )
-      }
-    } else {
-      const updated = await updateNote(item.id, { title: newName })
-      if (updated) {
-        setNotesAction((prev) =>
-          prev.map((n) => (n.id === updated.id ? updated : n))
-        )
-      }
-    }
-  }
-
-  const toggleFolder = (folderId: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(folderId)) {
-        newSet.delete(folderId)
       } else {
-        newSet.add(folderId)
-        const firstNoteInFolder = notes.find((n) => n.folder_id === folderId)
-        if (firstNoteInFolder) {
-          onSelectNoteAction(firstNoteInFolder)
+        const newNote = await createNote({
+          title: "New Note",
+          folder_id: parentId,
+        })
+        if (newNote) {
+          setNotesAction((prev) => [...prev, newNote])
+          if (parentId) {
+            setExpandedFolders((prev) => new Set(prev).add(parentId))
+          }
+          onSelectNoteAction(newNote)
         }
       }
-      return newSet
-    })
+    },
+    [
+      selectedFolderId,
+      setFoldersAction,
+      setNotesAction,
+      onSelectNoteAction,
+      setExpandedFolders,
+    ]
+  )
+
+  const handleRename = useCallback(
+    async (item: TreeItem, newName: string) => {
+      if (item.is_folder) {
+        const updated = await updateFolder(item.id, { name: newName })
+        if (updated) {
+          setFoldersAction((prev) =>
+            prev.map((f) => (f.id === updated.id ? updated : f))
+          )
+        }
+      } else {
+        const updated = await updateNote(item.id, { title: newName })
+        if (updated) {
+          setNotesAction((prev) =>
+            prev.map((n) => (n.id === updated.id ? updated : n))
+          )
+        }
+      }
+    },
+    [setFoldersAction, setNotesAction]
+  )
+
+  const handleChangeColor = useCallback(
+    async (id: string, color: string) => {
+      setFoldersAction((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, color } : f))
+      )
+      await updateFolder(id, { color })
+    },
+    [setFoldersAction]
+  )
+
+  const handleDelete = useCallback(
+    async (item: TreeItem) => {
+      if (item.is_folder) {
+        const success = await deleteFolder(item.id)
+        if (success) {
+          setFoldersAction((prev) => prev.filter((f) => f.id !== item.id))
+          if (selectedFolderId === item.id) setSelectedFolderId(null)
+        }
+      } else {
+        const success = await deleteNote(item.id)
+        if (success) {
+          setNotesAction((prev) => prev.filter((n) => n.id !== item.id))
+          if (selectedNote?.id === item.id) onSelectNoteAction(null)
+        }
+      }
+    },
+    [
+      setFoldersAction,
+      setNotesAction,
+      onSelectNoteAction,
+      selectedFolderId,
+      selectedNote,
+    ]
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragItem(event.active.data.current as TreeItem)
   }
 
-  const renderTree = (
-    parentId: string | null,
-    depth: number
-  ): JSX.Element[] => {
-    if (depth > MAX_FOLDER_DEPTH) return []
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveDragItem(null)
 
-    const childFolders: TreeItem[] = folders
+    if (!over) return
+
+    const draggedItem = active.data.current as TreeItem
+    const targetFolderId = over.id === "root-zone" ? null : (over.id as string)
+
+    if (draggedItem.id === targetFolderId) return
+    if (
+      draggedItem.is_folder &&
+      targetFolderId &&
+      isDescendant(folders, draggedItem.id, targetFolderId)
+    ) {
+      return
+    }
+
+    const currentParentId = draggedItem.is_folder
+      ? draggedItem.parent_id
+      : draggedItem.folder_id
+
+    if (currentParentId === targetFolderId) return
+
+    if (draggedItem.is_folder) {
+      setFoldersAction((prev) =>
+        prev.map((f) =>
+          f.id === draggedItem.id ? { ...f, parent_id: targetFolderId } : f
+        )
+      )
+      await updateFolder(draggedItem.id, { parent_id: targetFolderId })
+    } else {
+      setNotesAction((prev) =>
+        prev.map((n) =>
+          n.id === draggedItem.id ? { ...n, folder_id: targetFolderId } : n
+        )
+      )
+      await updateNote(draggedItem.id, { folder_id: targetFolderId })
+    }
+
+    if (targetFolderId) {
+      setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+    }
+  }
+
+  const toggleFolder = useCallback((id: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const handleSelect = useCallback(
+    (item: TreeItem) => {
+      if (item.is_folder) {
+        setSelectedFolderId(item.id)
+        onSelectNoteAction(null)
+      } else {
+        onSelectNoteAction(item as Note)
+        setSelectedFolderId((item as Note).folder_id)
+      }
+    },
+    [onSelectNoteAction]
+  )
+
+  useEffect(() => {
+    const handleGlobalShortcut = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+
+      if (e.key === "a" || e.key === "A") {
+        e.preventDefault()
+        handleCreate("note")
+      }
+    }
+
+    window.addEventListener("keydown", handleGlobalShortcut)
+    return () => window.removeEventListener("keydown", handleGlobalShortcut)
+  }, [handleCreate])
+
+  const renderTree = (parentId: string | null) => {
+    const childFolders = folders
       .filter((f) => f.parent_id === parentId)
-      .map((f) => ({ ...f, is_folder: true }))
-    const childNotes: TreeItem[] = notes
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    const childNotes = notes
       .filter((n) => n.folder_id === parentId)
-      .map((n) => ({ ...n, is_folder: false }))
+      .sort((a, b) => a.title.localeCompare(b.title))
 
-    const items: TreeItem[] = [...childFolders, ...childNotes]
-
-    return items
-      .sort((a, b) => {
-        if (a.is_folder !== b.is_folder) return a.is_folder ? -1 : 1
-        const nameA = a.is_folder ? a.name : a.title
-        const nameB = b.is_folder ? b.name : b.title
-        return nameA.localeCompare(nameB)
-      })
-      .map((item) => (
-        <FileExplorerItem
-          key={item.id}
-          item={item}
-          isSelected={!item.is_folder && selectedNote?.id === item.id}
-          isExpanded={item.is_folder && expandedFolders.has(item.id)}
-          onToggleFolder={toggleFolder}
-          onSelectNote={onSelectNoteAction}
-          onRename={handleRename}
-          onDelete={handleDelete}
-        >
-          {item.is_folder ? renderTree(item.id, depth + 1) : null}
-        </FileExplorerItem>
-      ))
+    return (
+      <>
+        {childFolders.map((folder) => (
+          <ExplorerItem
+            key={folder.id}
+            item={{ ...folder, is_folder: true }}
+            isSelected={selectedFolderId === folder.id && selectedNote === null}
+            isExpanded={expandedFolders.has(folder.id)}
+            onToggle={toggleFolder}
+            onSelect={handleSelect}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            onCreate={handleCreate}
+            onChangeColor={handleChangeColor}
+          >
+            {renderTree(folder.id)}
+          </ExplorerItem>
+        ))}
+        {childNotes.map((note) => (
+          <ExplorerItem
+            key={note.id}
+            item={{ ...note, is_folder: false }}
+            isSelected={selectedNote?.id === note.id}
+            isExpanded={false}
+            onToggle={() => {}}
+            onSelect={handleSelect}
+            onRename={handleRename}
+            onDelete={handleDelete}
+            onCreate={handleCreate}
+            onChangeColor={handleChangeColor}
+          >
+            {null}
+          </ExplorerItem>
+        ))}
+      </>
+    )
   }
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger className="h-full">
-        <div className="h-full p-2">
-          <div className="mb-2 flex items-center justify-between px-2">
-            <h2 className="text-lg font-semibold">Explorer</h2>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleCreate(false)}
-                title="New Note"
-              >
-                <Plus size={16} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleCreate(true)}
-                title="New Folder"
-              >
-                <FolderPlus size={16} />
-              </Button>
+    <TooltipProvider>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <ContextMenu>
+          <ContextMenuTrigger className="h-full w-full">
+            <div
+              className="flex h-full flex-col bg-background p-2"
+              onClick={() => {
+                setSelectedFolderId(null)
+                onSelectNoteAction(null)
+              }}
+            >
+              <div className="mb-2 flex items-center justify-between px-2 text-sm font-semibold text-muted-foreground">
+                <span>Explorer</span>
+                <div className="flex gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCreate("note")
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>New Note (A)</TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCreate("folder")
+                        }}
+                        title="New Folder"
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>New Folder</TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+
+              <RootDropZone>
+                {folders.length === 0 && notes.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                    Empty
+                  </div>
+                ) : (
+                  renderTree(null)
+                )}
+              </RootDropZone>
             </div>
-          </div>
-          {folders.length === 0 && notes.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No items yet.</p>
-          ) : (
-            renderTree(null, 0)
+          </ContextMenuTrigger>
+
+          <ContextMenuContent>
+            <ContextMenuItem onSelect={() => handleCreate("note")}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Note
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => handleCreate("folder")}>
+              <FolderPlus className="mr-2 h-4 w-4" />
+              New Folder
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onSelect={onToggleSidebarPositionAction}>
+              {sidebarPosition === "left" ? (
+                <>
+                  <PanelRight className="mr-2 h-4 w-4" />
+                  Move Sidebar Right
+                </>
+              ) : (
+                <>
+                  <PanelLeft className="mr-2 h-4 w-4" />
+                  Move Sidebar Left
+                </>
+              )}
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+
+        {mounted &&
+          createPortal(
+            <DragOverlay>
+              {activeDragItem && (
+                <div className="opacity-90">
+                  <ExplorerItem
+                    item={activeDragItem}
+                    isSelected={false}
+                    isExpanded={false}
+                    onToggle={() => {}}
+                    onSelect={() => {}}
+                    onRename={async () => {}}
+                    onDelete={async () => {}}
+                    onCreate={() => {}}
+                    onChangeColor={() => {}}
+                    isOverlay
+                  />
+                </div>
+              )}
+            </DragOverlay>,
+            document.body
           )}
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onSelect={() => onLayoutChangeAction("horizontal")}>
-          <PanelLeft className="mr-2 h-4 w-4" />
-          <span>Move Panel Left</span>
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => onLayoutChangeAction("vertical")}>
-          <PanelRight className="mr-2 h-4 w-4" />
-          <span>Move Panel Right</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+      </DndContext>
+    </TooltipProvider>
   )
 }

@@ -72,7 +72,7 @@ export async function createNote(
 
 export async function updateNote(
   id: string,
-  note: Partial<Pick<Note, "title" | "content">>
+  note: Partial<Note>
 ): Promise<Note | null> {
   const { supabase } = await getSupabaseWithUser()
   const { data, error } = await supabase
@@ -115,7 +115,7 @@ export async function createFolder(
 
 export async function updateFolder(
   id: string,
-  folder: Partial<Pick<Folder, "name">>
+  folder: Partial<Folder>
 ): Promise<Folder | null> {
   const { supabase } = await getSupabaseWithUser()
   const { data, error } = await supabase

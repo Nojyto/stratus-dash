@@ -13,6 +13,7 @@ export type Folder = {
   parent_id: string | null
   user_id: string
   created_at: string
+  color?: string
 }
 
 export type DashboardItems = {
